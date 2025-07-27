@@ -1,0 +1,3 @@
+boto3
+pandas
+apache-airflow-providers-docker

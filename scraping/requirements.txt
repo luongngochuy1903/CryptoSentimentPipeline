@@ -1,0 +1,13 @@
+selenium==4.9.1
+beautifulsoup4==4.12.2
+webdriver_manager==4.0.0
+requests
+lxml_html_clean
+trafilatura
+playwright
+pandas
+confluent-kafka[avro]
+feedparser
+websocket-client
+psycopg2
+minio

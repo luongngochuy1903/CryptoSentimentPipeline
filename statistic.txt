@@ -1,0 +1,517 @@
+1. RSI (Relative Strength Index)
+Ý nghĩa: Đo mức quá mua/quá bán, dao động từ 0–100
+
+RSI > 70: Quá mua → khả năng điều chỉnh
+RSI < 30: Quá bán → khả năng bật lên
+
+Công thức (RSI 14):
+
+𝑅
+𝑆
+=
+Trung b
+ı
+ˋ
+nh t
+a
+˘
+ng
+Trung b
+ı
+ˋ
+nh giảm
+RS= 
+Trung b 
+ı
+ˋ
+ nh giảm
+Trung b 
+ı
+ˋ
+ nh t 
+a
+˘
+ ng
+​
+ 
+𝑅
+𝑆
+𝐼
+=
+100
+−
+100
+1
++
+𝑅
+𝑆
+RSI=100− 
+1+RS
+100
+​
+ 
+Input cần:
+
+Close Price của ít nhất 14 cây nến gần nhất
+
+Data source:
+
+✅ WebSocket: btcusdt@kline_1m → lấy k['c'] (close price)
+
+✅ REST: /api/v3/klines?interval=1m&limit=100
+
+📘 2. MACD (Moving Average Convergence Divergence)
+Ý nghĩa: Đo động lượng, xu hướng tăng/giảm
+
+Gồm: MACD line, Signal line, Histogram
+
+Công thức (12/26/9):
+
+MACD
+=
+𝐸
+𝑀
+𝐴
+12
+(
+𝐶
+𝑙
+𝑜
+𝑠
+𝑒
+)
+−
+𝐸
+𝑀
+𝐴
+26
+(
+𝐶
+𝑙
+𝑜
+𝑠
+𝑒
+)
+MACD=EMA 
+12
+​
+ (Close)−EMA 
+26
+​
+ (Close)
+Signal
+=
+𝐸
+𝑀
+𝐴
+9
+(
+MACD
+)
+Signal=EMA 
+9
+​
+ (MACD)
+Input cần:
+
+Close Price: 26 cây nến trở lên
+
+Data source:
+
+✅ WebSocket: btcusdt@kline_1m → k['c']
+
+✅ REST: /api/v3/klines
+
+📘 3. Bollinger Bands
+Ý nghĩa: Đo biến động giá. Giá vượt ra khỏi band trên/dưới thường báo hiệu đảo chiều.
+
+Công thức (BB(20, 2σ)):
+
+Middle Band
+=
+𝑆
+𝑀
+𝐴
+20
+(
+𝐶
+𝑙
+𝑜
+𝑠
+𝑒
+)
+Middle Band=SMA 
+20
+​
+ (Close)
+Upper Band
+=
+𝑆
+𝑀
+𝐴
+20
++
+2
+⋅
+𝜎
+Upper Band=SMA 
+20
+​
+ +2⋅σ
+Lower Band
+=
+𝑆
+𝑀
+𝐴
+20
+−
+2
+⋅
+𝜎
+Lower Band=SMA 
+20
+​
+ −2⋅σ
+Input cần:
+
+Close Price: 20 cây nến
+
+Tính SMA + Standard Deviation
+
+Data source:
+
+WebSocket: btcusdt@kline_1m → k['c']
+
+📘 4. SMA (Simple Moving Average)
+Ý nghĩa: Trung bình đơn giá đóng cửa
+
+Công thức:
+
+𝑆
+𝑀
+𝐴
+𝑛
+=
+1
+𝑛
+∑
+𝑖
+=
+1
+𝑛
+𝐶
+𝑙
+𝑜
+𝑠
+𝑒
+𝑖
+SMA 
+n
+​
+ = 
+n
+1
+​
+  
+i=1
+∑
+n
+​
+ Close 
+i
+​
+ 
+Input cần: Close của n nến
+
+Data source: btcusdt@kline_1m
+
+📘 5. EMA (Exponential Moving Average)
+Ý nghĩa: Nhấn mạnh dữ liệu mới → nhạy hơn SMA
+
+Công thức (recursive):
+
+𝐸
+𝑀
+𝐴
+𝑡
+=
+𝛼
+⋅
+𝐶
+𝑙
+𝑜
+𝑠
+𝑒
+𝑡
++
+(
+1
+−
+𝛼
+)
+⋅
+𝐸
+𝑀
+𝐴
+𝑡
+−
+1
+EMA 
+t
+​
+ =α⋅Close 
+t
+​
+ +(1−α)⋅EMA 
+t−1
+​
+ 
+𝛼
+=
+2
+𝑛
++
+1
+α= 
+n+1
+2
+​
+ 
+Input cần: Close price + EMA trước đó
+
+Data source: btcusdt@kline_1m
+
+📘 6. ATR (Average True Range)
+Ý nghĩa: Đo mức biến động
+
+True Range (TR):
+
+𝑇
+𝑅
+=
+max
+⁡
+(
+High
+−
+Low
+,
+∣
+High
+−
+Close
+𝑝
+𝑟
+𝑒
+𝑣
+∣
+,
+∣
+Low
+−
+Close
+𝑝
+𝑟
+𝑒
+𝑣
+∣
+)
+TR=max(High−Low,∣High−Close 
+prev
+​
+ ∣,∣Low−Close 
+prev
+​
+ ∣)
+ATR:
+
+𝐴
+𝑇
+𝑅
+14
+=
+SMA
+14
+(
+𝑇
+𝑅
+)
+ATR 
+14
+​
+ =SMA 
+14
+​
+ (TR)
+Input cần:
+
+High, Low, Close của ít nhất 15 nến
+
+Data source:
+
+WebSocket btcusdt@kline_1m → k['h'], k['l'], k['c']
+
+📘 7. Stochastic Oscillator
+Ý nghĩa: Đo tương quan giá đóng cửa với biên độ cao/thấp gần nhất
+→ Xác định quá mua/quá bán
+
+Công thức:
+
+%
+𝐾
+=
+𝐶
+𝑙
+𝑜
+𝑠
+𝑒
+−
+𝐿
+𝑜
+𝑤
+𝑛
+𝐻
+𝑖
+𝑔
+ℎ
+𝑛
+−
+𝐿
+𝑜
+𝑤
+𝑛
+×
+100
+%K= 
+High 
+n
+​
+ −Low 
+n
+​
+ 
+Close−Low 
+n
+​
+ 
+​
+ ×100
+%
+𝐷
+=
+𝑆
+𝑀
+𝐴
+3
+(
+%
+𝐾
+)
+%D=SMA 
+3
+​
+ (%K)
+Input cần:
+
+High, Low, Close của ít nhất n=14 nến
+
+Data source: WebSocket kline
+
+📘 8. Volume Profile
+Ý nghĩa: Phân phối khối lượng theo mức giá
+
+POC: Point of Control (giá có khối lượng lớn nhất)
+
+VAH/VAL: Giá biên trên/dưới 70% khối lượng
+
+Input cần:
+
+Giá giao dịch (price)
+
+Khối lượng (quantity)
+
+Data source:
+
+WebSocket: btcusdt@aggTrade
+
+p: price
+
+q: quantity
+
+👉 Tính thủ công bằng cách group volume theo price
+
+📘 9. Divergence (Phân kỳ)
+Ý nghĩa: So sánh giá và chỉ báo (thường là RSI hoặc MACD)
+
+Giá tạo đỉnh mới nhưng RSI không tạo đỉnh → phân kỳ giảm
+
+Input cần:
+
+Giá và RSI/MACD
+
+Đoạn thời gian đủ dài để quan sát mẫu
+
+Data source:
+
+WebSocket kline để lấy giá
+
+Tính RSI bằng thư viện
+
+📘 10. Market Regime / Multi-Timeframe
+Ý nghĩa:
+
+Tổng hợp xu hướng từ nhiều khung thời gian (1m, 5m, 15m, 1h, 1d)
+
+Xác định trạng thái: bullish, bearish, neutral, transitional
+
+Input cần:
+
+Dữ liệu từ nhiều interval:
+
+btcusdt@kline_1m, btcusdt@kline_5m, v.v.
+
+Data source:
+
+WebSocket hoặc REST API nhiều lần cho từng interval
+
+
+------ data quality -------
+✅ 1. Completeness (Độ đầy đủ)
+Rule	Mô tả
+NOT NULL	Cột bắt buộc không được để trống
+REQUIRED FIELDS	Tất cả các bản ghi phải có đầy đủ các trường quan trọng
+NO EMPTY STRINGS	Không được có giá trị là chuỗi rỗng "" ở các cột cụ thể
+MINIMUM ROW COUNT	Phải có ít nhất X dòng (dữ liệu không bị mất hoặc rỗng hoàn toàn)
+
+✅ 2. Uniqueness (Tính duy nhất)
+Rule	Mô tả
+UNIQUE COLUMN	Một cột phải có giá trị duy nhất (ví dụ: user_id, transaction_id)
+NO DUPLICATE ROWS	Không có dòng trùng nhau hoàn toàn
+UNIQUE COMBINATION	Tổ hợp nhiều cột phải duy nhất (ví dụ: (user_id, date))
+
+✅ 3. Validity (Tính hợp lệ)
+Rule	Mô tả
+DATA TYPE CHECK	Dữ liệu phải đúng kiểu (int, float, datetime, v.v.)
+DATE FORMAT VALIDATION	Ngày phải đúng định dạng YYYY-MM-DD, không lỗi 1970-01-01
+ENUMERATION CHECK	Giá trị phải nằm trong danh sách cố định (vd: status in ['active', 'inactive'])
+LENGTH CHECK	Chuỗi không vượt quá độ dài nhất định (ví dụ: tên ≤ 100 ký tự)
+
+✅ 4. Accuracy / Consistency (Tính chính xác và nhất quán)
+Rule	Mô tả
+NUMERIC RANGE CHECK	Giá trị số nằm trong khoảng hợp lý (vd: 0 ≤ age ≤ 120)
+DATE LOGIC	created_at ≤ updated_at, birth_date ≤ today
+FIELD CROSS VALIDATION	Nếu gender = "male" thì không thể pregnant = True
+LEADING/TRAILING SPACES	Không có khoảng trắng đầu/cuối chuỗi
+
+✅ 5. Timeliness (Tính kịp thời)
+Rule	Mô tả
+RECENT DATA CHECK	Dữ liệu phải được cập nhật gần đây (trong 1 ngày / tuần...)
+NO FUTURE DATES	Ngày không thể lớn hơn ngày hiện tại
+DATA ARRIVAL TIME	Dữ liệu phải có mặt trước 10AM mỗi ngày (áp dụng cho pipeline ETL)
+
+✅ 6. Custom Rules (Theo nghiệp vụ)
+IF A = X THEN B MUST = Y — ràng buộc logic nghiệp vụ.
+
+Monthly salary = hourly_rate * hours_worked — kiểm tra tính toán logic.
+
+Email domain phải thuộc tổ chức (.edu, @company.com)
