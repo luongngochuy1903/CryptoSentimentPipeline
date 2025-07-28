@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
+from pyspark.sql.window import Window
 from datetime import datetime, timedelta
 
 
@@ -180,6 +181,7 @@ spark.sql("""
             tag STRING,
             year INT,
             month INT,
+            day INT
         )
         USING ICEBERG
         PARTITIONED BY (id_author, id_topic, year, month)
@@ -213,8 +215,8 @@ spark.sql("""
 
 spark.sql("""
         CREATE TABLE IF NOT EXISTS iceberg.gold.author_credit (
-            id INT,
-            id_author STRING,
+            id_author INT,
+            author STRING,
             credit_score FLOAT
         )
         USING ICEBERG
@@ -240,26 +242,42 @@ spark.sql("""
         LOCATION 's3a://gold/author_credit/'
     """)
 
+#-------------------Tạo dim_time-------------------
+def create_dim_time():
+    # Tạo list ngày
+    start_date = datetime(2022, 1, 1)
+    end_date = datetime(2028, 12, 31)
+    date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
 
-# Tạo list ngày
-start_date = datetime(2022, 1, 1)
-end_date = datetime(2028, 12, 31)
-date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
+    # Tạo DataFrame
+    df_date = spark.createDataFrame([(d,) for d in date_list], ["date"])
 
-# Tạo DataFrame
-df_date = spark.createDataFrame([(d,) for d in date_list], ["date"])
+    # Tạo các cột thời gian
+    dim_time = df_date.withColumn("date_id", date_format("date", "yyyyMMdd").cast("int")) \
+        .withColumn("year", year("date")) \
+        .withColumn("month", month("date")) \
+        .withColumn("day", dayofmonth("date")) \
+        .withColumn("week_of_year", weekofyear("date")) \
+        .withColumn("quarter", quarter("date")) \
+        .withColumn("day_of_week", date_format("date", "EEEE")) \
+        .withColumn("is_weekend", expr("dayofweek(date) IN (1,7)")) \
+        .withColumn("month_name", date_format("date", "MMMM"))
 
-# Tạo các cột thời gian
-dim_time = df_date.withColumn("date_id", date_format("date", "yyyyMMdd").cast("int")) \
-    .withColumn("year", year("date")) \
-    .withColumn("month", month("date")) \
-    .withColumn("day", dayofmonth("date")) \
-    .withColumn("week_of_year", weekofyear("date")) \
-    .withColumn("quarter", quarter("date")) \
-    .withColumn("day_of_week", date_format("date", "EEEE")) \
-    .withColumn("is_weekend", expr("dayofweek(date) IN (1,7)")) \
-    .withColumn("month_name", date_format("date", "MMMM"))
+    dim_time.writeTo("iceberg.gold.dim_time").createOrReplace()
 
-dim_time.writeTo("iceberg.gold.dim_time").createOrReplace()
+#-----------------Tạo dim_coin---------------
+def create_dim_coin():
+    topic_symbol = [
+    ("bitcoin", "BTC"),
+    ("ethereum", "ETH"),
+    ("bnb", "BNB"),
+    ("xrp", "XRP"),
+    ("solana", "SOL")
+    ]
+    df_topic = spark.createDataFrame(topic_symbol, ["name", "symbol"])
+    spec = Window.orderBy("name")
+    df_topic = df_topic.withColumn("coin_id", row_number().over(spec))
+
+#----------------Tạo dim_author--------------
 
 print("xong")
