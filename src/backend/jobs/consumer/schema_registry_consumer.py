@@ -62,8 +62,9 @@ class SchemaRegistryConsumer():
     
     def handle_msg(self, msg, path):
         df = spark.createDataFrame(msg)
+        from pyspark.sql.types import TimestampType
         from pyspark.sql.functions import (
-    current_timestamp, year, month, dayofmonth, hour, minute, second
+    current_timestamp, year, month, dayofmonth, hour, col, from_unixtime, to_timestamp
 )
         df = df.withColumn("created_ts", current_timestamp()) \
             .withColumn("year", year("created_ts")) \
@@ -73,9 +74,16 @@ class SchemaRegistryConsumer():
         
         df = df.drop("created_ts")
         if "realtime" not in path:
+            if "comments" in path:
+                df = df.withColumn("created_utc", to_timestamp(col("created_utc")))
+            else:
+                df = df.withColumn("published", to_timestamp("published", "yyyy--MM--dd'T'HH:mm:ss'Z'"))
             df.write.mode("append").partitionBy("year", "month", "day") \
                 .parquet(f"s3a://silver/{path}/")
         else:
+            df = df.withColumn("starttime", from_unixtime((col("starttime") / 1000).cast("long")).cast(TimestampType()))
+            df = df.withColumn("endtime", from_unixtime((col("endtime") / 1000).cast("long")).cast(TimestampType()))
+            df.printSchema()
             df.write.mode("append").partitionBy("year", "month", "day", "hour") \
                 .parquet(f"s3a://silver/{path}/")
 
@@ -83,25 +91,30 @@ class SchemaRegistryConsumer():
         json_deserializer = JSONDeserializer(self.schema, from_dict=self.dict_to_dict)
         self.subcribe_topic()
         try:
-            batch = []
             while True:
                 try:
-                    msg = self.consumer.poll(1.0)
-                    if msg is None:
-                        if batch:
-                            try:                          
-                                self.handle_msg(batch, path)
-                                batch = []
-                                self.consumer.commit(asynchronous=True)
-                            except Exception as e:
-                                self.logger.info(f"handle_msg fail: {e}")
+                    messages = self.consumer.consume(timeout=1.5)
+                    if not messages:
                         continue
-                    if msg.error():
-                        self.logger.info(f"{consumer_name} error: {msg.error()}")
-                        continue
-                    python_dict = json_deserializer(msg.value(), SerializationContext(msg.topic(), MessageField.VALUE))
-                    #Need it because json Deserializer is not a part of consumer, so it doesn't know about data source
-                    batch.append(python_dict)
+                    batch = []
+                    for msg in messages:
+                        if msg is None:
+                            continue
+                        if msg.error():
+                            self.logger.info(f"{consumer_name} error: {msg.error()}")
+                            continue
+
+                        python_dict = json_deserializer(
+                            msg.value(), SerializationContext(msg.topic(), MessageField.VALUE)
+                        )
+                        print(f"offset là: {msg.offset()}")
+                        batch.append(python_dict)
+                    try:
+                        self.handle_msg(batch, path)
+                        self.consumer.commit(asynchronous=True)
+                    except Exception as e:
+                        self.logger.info(f"handle_msg fail: {e}")
+
                 except Exception as e:
                     self.logger.info(f"Fail when consuming messages from {self.topic}: {e}")
                 

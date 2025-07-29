@@ -16,13 +16,13 @@ class RealtimeQualityProducer(SchemaRegistryObj):
         self.logger.info(coindf.schema.simpleString())
         coindf.printSchema()
 
-        #Checking null
-        from pyspark.sql.functions import col
-        num_of_null_text = coindf.filter((col("text").isNull()) | (col("text") == "")).count()
-        self.logger.info(f"Text columns WHICH IS NULL:{num_of_null_text}")
+        # #Checking null
+        # from pyspark.sql.functions import col
+        # num_of_null_text = coindf.filter((col("text").isNull()) | (col("text") == "")).count()
+        # self.logger.info(f"Text columns WHICH IS NULL:{num_of_null_text}")
 
-        num_of_null_published = coindf.filter(col("published").isNull()).count()
-        self.logger.info(f"Published columns WHICH IS NULL:{num_of_null_published}")
+        # num_of_null_published = coindf.filter(col("published").isNull()).count()
+        # self.logger.info(f"Published columns WHICH IS NULL:{num_of_null_published}")
 
         #Cheking date
         from pyspark.sql.functions import col, from_unixtime, cast
