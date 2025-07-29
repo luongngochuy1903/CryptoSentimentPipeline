@@ -66,7 +66,7 @@ def on_message(ws, message):
             print(f"\n[📈 {symbol}]")
             print(f"🕒 Kline-Start: {tradetime} | End: {eventtime} ---- Interval: {interval}")
             print(f"💰 Giá open: {open} | 🔢 Số lượng coin: {volume}")
-            print(f"💰 Giá close: {close} | 🔢 Giá trị coin (BTC): {value}")
+            print(f"💰 Giá close: {close} | 🔢 Tổng giá trị coin (BTC): {value}")
             print("-" * 50)
 
 # Gửi yêu cầu SUBSCRIBE khi kết nối
