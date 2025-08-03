@@ -19,6 +19,5 @@ news_schema = """
 }
 """
 
-def run_news_consumer():
-    consumer = SchemaRegistryConsumer("news_raw", news_schema, "NewsCon", "news-group-stage2")
-    consumer.polling("News-to-Silver", "news")
+consumer = SchemaRegistryConsumer("news_raw", news_schema, "NewsCon", "news-group-stage2")
+consumer.polling("News-to-Silver", "news")

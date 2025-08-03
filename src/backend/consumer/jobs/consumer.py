@@ -15,7 +15,6 @@ class ConsumerManager():
         print("Assigned partitions:", partitions)
 
     def __init__(self):
-        self.starttime = time.time()
         self.batch = []
 
     def create_consumer(self, group_id):
@@ -33,37 +32,34 @@ class ConsumerManager():
 
     def handle_msg(self):
         pass
-    def polling(self, consumer_name, consumer, interval_time):
+    def polling(self, consumer_name, consumer):
         print(f"Start consuming: {consumer_name}")
         try:
             while True:
-                msg = consumer.poll(1.0)
-                
-                if time.time() - self.starttime >= interval_time:
-                    print(f"{consumer_name} interval reached!")
-                    if self.batch:
-                        print(f"{consumer_name} received: {self.batch}")
-                        try:
-                            self.handle_msg() 
-                            self.batch = [] 
-                            consumer.commit(asynchronous=True)
-                        except Exception as e:
-                            print(f"handle_msg fail: {e}")
-                    self.starttime = time.time() 
+                msg = consumer.consume(timeout=1.5)
+                if self.batch:
+                    print(f"{consumer_name} received: {self.batch}")
+                    try:
+                        self.handle_msg() 
+                        self.batch = [] 
+                        consumer.commit(asynchronous=True)
+                    except Exception as e:
+                        print(f"handle_msg fail: {e}")
 
                 if msg is None:
                     continue
                 
-                if msg.error():
-                    print(f"{consumer_name} error: {msg.error()}")
-                    continue
-                
-                try:
-                    value = json.loads(msg.value().decode("utf-8"))
-                    self.batch.append(value)
-                    print(f"Batch size: {len(self.batch)}")
-                except Exception as e:
-                    print("Failed to parse message while batching:", e)
+                for message in msg:
+                    try:
+                        if message.error():
+                            print(f"{consumer_name} error: {message.error()}")
+                            continue
+                        print(f"Offset: {message.offset()}")
+                        value = json.loads(message.value().decode("utf-8"))
+                        self.batch.append(value)
+                        print(f"Batch size: {len(self.batch)}")
+                    except Exception as e:
+                        print("Failed to parse message while batching:", e)
 
         except KeyboardInterrupt:
             pass

@@ -93,5 +93,5 @@ class NewsConsumer(ConsumerManager):
 def main():
     manager = NewsConsumer()
     manager.subcribe_topic(manager.coin_realtime_consumer,"news")
-    manager.polling("News-consumer", manager.coin_realtime_consumer, 60)
+    manager.polling("News-consumer", manager.coin_realtime_consumer)
 main()

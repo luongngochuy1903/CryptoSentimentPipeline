@@ -23,6 +23,5 @@ realtime_schema = """
 }
 """
 
-def run_realtime_consumer():
-    consumer = SchemaRegistryConsumer("realtime_raw", realtime_schema, "NewsCon", "realtime-group-stage2")
-    consumer.polling("Realtime-to-Silver", "realtime")
+consumer = SchemaRegistryConsumer("realtime_raw", realtime_schema, "NewsCon", "realtime-group-stage2")
+consumer.polling("Realtime-to-Silver", "realtime")
