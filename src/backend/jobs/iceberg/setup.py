@@ -3,20 +3,10 @@ from pyspark.sql.functions import *
 from pyspark.sql.window import Window
 from datetime import datetime, timedelta
 
-
-spark = SparkSession.builder \
-    .appName("Iceberg Init") \
-    .getOrCreate()
-
+spark = SparkSession.builder.appName("Setup iceberg table").getOrCreate()
 # ------------------CREATE SILVER LAYER----------------------
-spark.sql("USE iceberg.default;")
-spark.sql("SHOW CATALOGS").show()
-
-spark.sql("CREATE DATABASE IF NOT EXISTS iceberg.silver")
-
 spark.sql("""
-
-        CREATE TABLE IF NOT EXISTS iceberg.silver.news (
+        CREATE TABLE IF NOT EXISTS silver.news (
             domain STRING,
             title STRING,
             url STRING,
@@ -36,7 +26,7 @@ spark.sql("""
 
 spark.sql("""
 
-        CREATE TABLE IF NOT EXISTS iceberg.silver.comments (
+        CREATE TABLE IF NOT EXISTS silver.comments (
             subreddit STRING,
             title STRING,
             author STRING,
@@ -58,7 +48,7 @@ spark.sql("""
 
 spark.sql("""
 
-        CREATE TABLE IF NOT EXISTS iceberg.silver.realtime (
+        CREATE TABLE IF NOT EXISTS silver.realtime (
             symbol STRING,
             name STRING,
             interval STRING,
@@ -70,6 +60,7 @@ spark.sql("""
             close FLOAT,
             highest FLOAT,
             lowest FLOAT,
+            tag STRING,
             year INT,
             month INT,
             day INT,
@@ -79,12 +70,11 @@ spark.sql("""
         PARTITIONED BY (year, month, day, hour)
         LOCATION 's3a://silver/realtime/'
     """)
-
+print("xong")
 # Create table for ML table
 
 # ------------------CREATE GOLD LAYER----------------------
-spark.sql("CREATE DATABASE IF NOT EXIST iceberg.gold")
-spark.sql("""CREATE TABLE IF NOT EXIST iceberg.gold.statistic
+spark.sql("""CREATE TABLE IF NOT EXISTS iceberg.gold_statistic
         (
             id INT,
             coin_id STRING,
@@ -107,7 +97,7 @@ spark.sql("""CREATE TABLE IF NOT EXIST iceberg.gold.statistic
         LOCATION 's3a:///gold/statistic/'
           """)
 
-spark.sql("""CREATE TABLE IF NOT EXIST iceberg.gold.sentiment
+spark.sql("""CREATE TABLE IF NOT EXISTS iceberg.gold_sentiment
         (
             id INT,
             coin_id STRING,
@@ -125,7 +115,7 @@ spark.sql("""CREATE TABLE IF NOT EXIST iceberg.gold.sentiment
         LOCATION 's3a:///gold/realtime/'
           """)
 
-spark.sql("""CREATE TABLE IF NOT EXIST iceberg.gold.dim_time
+spark.sql("""CREATE TABLE IF NOT EXISTS iceberg.gold_dim_time
         (
             timestamp_id STRING,
             year INT,
@@ -146,7 +136,7 @@ spark.sql("""CREATE TABLE IF NOT EXIST iceberg.gold.dim_time
 
 spark.sql("""
 
-        CREATE TABLE IF NOT EXISTS iceberg.gold.dim_news (
+        CREATE TABLE IF NOT EXISTS iceberg.gold_dim_news (
             id INT,
             id_topic INT,
             domain STRING,
@@ -167,7 +157,7 @@ spark.sql("""
     """)
 
 spark.sql("""
-        CREATE TABLE IF NOT EXISTS iceberg.gold.dim_comments (
+        CREATE TABLE IF NOT EXISTS iceberg.gold_dim_comments (
             coin_id INT,
             id_topic INT,
             timestamp_id STRING,
@@ -190,7 +180,7 @@ spark.sql("""
 
 spark.sql("""
 
-        CREATE TABLE IF NOT EXISTS iceberg.gold.dim_realtime (
+        CREATE TABLE IF NOT EXISTS iceberg.gold_dim_realtime (
             realtime_id INT,
             coin_id INT,
             interval STRING,
@@ -214,7 +204,7 @@ spark.sql("""
 
 
 spark.sql("""
-        CREATE TABLE IF NOT EXISTS iceberg.gold.author_credit (
+        CREATE TABLE IF NOT EXISTS iceberg.gold_author_credit (
             id_author INT,
             author STRING,
             credit_score FLOAT
@@ -224,7 +214,7 @@ spark.sql("""
     """)
 
 spark.sql("""
-        CREATE TABLE IF NOT EXISTS iceberg.gold.dim_coin (
+        CREATE TABLE IF NOT EXISTS iceberg.gold_dim_coin (
             coin_id INT,
             symbol STRING,
             name STRING
@@ -234,7 +224,7 @@ spark.sql("""
     """)
 
 spark.sql("""
-        CREATE TABLE IF NOT EXISTS iceberg.gold.dim_topic (
+        CREATE TABLE IF NOT EXISTS iceberg.gold_dim_topic (
             id_topic INT,
             topic STRING
         )
@@ -242,7 +232,7 @@ spark.sql("""
         LOCATION 's3a://gold/author_credit/'
     """)
 
-#-------------------Tạo dim_time-------------------
+# #-------------------Tạo dim_time-------------------
 def create_dim_time():
     # Tạo list ngày
     start_date = datetime(2022, 1, 1)
@@ -278,6 +268,6 @@ def create_dim_coin():
     spec = Window.orderBy("name")
     df_topic = df_topic.withColumn("coin_id", row_number().over(spec))
 
-#----------------Tạo dim_author--------------
+# #----------------Tạo dim_author--------------
 
 print("xong")

@@ -3,6 +3,7 @@ from confluent_kafka.schema_registry.json_schema import JSONDeserializer
 from confluent_kafka import Consumer
 from pyspark.sql import SparkSession
 import os, sys, logging
+import time
 from datetime import datetime
 
 spark = SparkSession.builder.appName("SchemaRegistryConsumer").config("spark.cores.max", "1").config("spark.executor.cores", "1").getOrCreate()
@@ -57,7 +58,7 @@ class SchemaRegistryConsumer():
             'bootstrap.servers': 'kafka:9092',
             'group.id': group_id,
             'enable.auto.commit': False,
-            'auto.offset.reset': 'earliest'
+            'auto.offset.reset': 'latest'
         })
     
     def handle_msg(self, msg, path):
@@ -91,7 +92,8 @@ class SchemaRegistryConsumer():
         json_deserializer = JSONDeserializer(self.schema, from_dict=self.dict_to_dict)
         self.subcribe_topic()
         try:
-            while True:
+            starttime = time.time()
+            while time.time() - starttime < 300:
                 try:
                     messages = self.consumer.consume(timeout=1.5)
                     if not messages:
@@ -107,7 +109,7 @@ class SchemaRegistryConsumer():
                         python_dict = json_deserializer(
                             msg.value(), SerializationContext(msg.topic(), MessageField.VALUE)
                         )
-                        print(f"offset là: {msg.offset()}")
+                        print(f"offset: {msg.offset()}")
                         batch.append(python_dict)
                     try:
                         self.handle_msg(batch, path)

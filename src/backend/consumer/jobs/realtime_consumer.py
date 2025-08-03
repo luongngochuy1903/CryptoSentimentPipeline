@@ -103,5 +103,5 @@ class RealTimeConsumer(ConsumerManager):
 def main():
     manager = RealTimeConsumer()
     manager.subcribe_topic(manager.coin_realtime_consumer,"real-time")
-    manager.polling("realtime_consumer", manager.coin_realtime_consumer, 60)
+    manager.polling("realtime_consumer", manager.coin_realtime_consumer)
 main()

@@ -21,6 +21,5 @@ comments_schema = """
 }
 """
 
-def run_comments_consumer():
-    consumer = SchemaRegistryConsumer("comments_raw", comments_schema, "CommentsCon", "comments-group-stage2")
-    consumer.polling("Comments-to-Silver", "comments")
+consumer = SchemaRegistryConsumer("comments_raw", comments_schema, "CommentsCon", "comments-group-stage2")
+consumer.polling("Comments-to-Silver", "comments")
