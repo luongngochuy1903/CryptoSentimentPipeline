@@ -82,8 +82,8 @@ class SchemaRegistryConsumer():
             df.write.mode("append").partitionBy("year", "month", "day") \
                 .parquet(f"s3a://silver/{path}/")
         else:
-            df = df.withColumn("starttime", from_unixtime((col("starttime") / 1000).cast("long")).cast(TimestampType()))
-            df = df.withColumn("endtime", from_unixtime((col("endtime") / 1000).cast("long")).cast(TimestampType()))
+            df = df.withColumn("starttime", from_unixtime((col("starttime") / 1000).cast("long")).cast("timestamp"))
+            df = df.withColumn("endtime", from_unixtime((col("endtime") / 1000).cast("long")).cast("timestamp"))
             df.printSchema()
             df.write.mode("append").partitionBy("year", "month", "day", "hour") \
                 .parquet(f"s3a://silver/{path}/")
