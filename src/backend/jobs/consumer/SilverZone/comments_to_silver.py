@@ -1,4 +1,4 @@
-from consumer.schema_registry_consumer import SchemaRegistryConsumer
+from schema_registry_consumer import SchemaRegistryConsumer
 
 comments_schema = """
 {

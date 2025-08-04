@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, from_unixtime
+from pyspark.sql.functions import from_json, col, from_unixtime, window
 from pyspark.sql.types import StructType, StringType, LongType, StructField, TimestampType, DecimalType
 
 spark = SparkSession.builder.appName("Streaming_to_app").getOrCreate()
@@ -30,4 +30,16 @@ df = df.withColumn("starttime", from_unixtime(col("starttime") / 1000).cast("tim
 df = df.withColumn("endtime", from_unixtime(col("endtime") / 1000).cast("timestamp"))
 df.printSchema()
 
-window_df = df.withWatermark("event")
+window_df = df.withWatermark("endtime", "5 minutes") \
+                .groupBy(
+                    window(col("endtime"), "15 minutes"), col("symbol")
+                ) \
+                .agg()
+
+window_write = window_df.writeStream \
+                .format("")
+realtime_df = df.agg()
+
+realtime_write = realtime_df.writeStream \
+                .format("")
+

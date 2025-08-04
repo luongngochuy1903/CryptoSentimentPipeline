@@ -1,5 +1,6 @@
-from consumer.schema_registry_consumer import SchemaRegistryConsumer
-
+import sys, os
+sys.path.append("/opt/spark_jobs/consumer")
+from schema_registry_consumer import SchemaRegistryConsumer
 news_schema = """
 {
     "$schema":"http://json-schema.org/draft-07/schema#",

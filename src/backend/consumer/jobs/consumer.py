@@ -22,7 +22,8 @@ class ConsumerManager():
             'bootstrap.servers': 'kafka:9092',
             'group.id': group_id,
             'enable.auto.commit': False,
-            'auto.offset.reset': 'earliest'
+            "heartbeat.interval.ms": 3000,
+            'auto.offset.reset': 'latest'
         })
     
     def subcribe_topic(self, consumer, topic):
@@ -37,16 +38,16 @@ class ConsumerManager():
         try:
             while True:
                 msg = consumer.consume(timeout=1.5)
-                if self.batch:
-                    print(f"{consumer_name} received: {self.batch}")
-                    try:
-                        self.handle_msg() 
-                        self.batch = [] 
-                        consumer.commit(asynchronous=True)
-                    except Exception as e:
-                        print(f"handle_msg fail: {e}")
 
-                if msg is None:
+                if not msg:
+                    if self.batch:
+                        print(f"{consumer_name} received: {self.batch}")
+                        try:
+                            self.handle_msg() 
+                            self.batch = [] 
+                            consumer.commit(asynchronous=True)
+                        except Exception as e:
+                            print(f"handle_msg fail: {e}")
                     continue
                 
                 for message in msg:

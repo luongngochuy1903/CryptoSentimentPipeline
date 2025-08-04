@@ -55,13 +55,13 @@ class NewsQualityProducer(SchemaRegistryObj):
         #checking date
         from pyspark.sql.functions import to_timestamp, to_date, min, max
             
-        newsdf = newsdf.withColumn("published", to_timestamp("published", "yyyy--MM--dd'T'HH:mm:ss'Z'"))
+        newsdf = newsdf.withColumn("published_ts", to_timestamp("published", "yyyy-MM-dd'T'HH:mm:ss'Z'"))
         newsdf.show(20)
-        min_date_row = newsdf.agg(min(to_date(col("published"))).alias("min_date")).collect()[0]
+        min_date_row = newsdf.agg(min(col("published_ts")).alias("min_date")).collect()[0]
         min_date = min_date_row["min_date"]
         self.logger.info(f"MIN DATE: {min_date}")
 
-        max_date_row = newsdf.agg(max(to_date(col("published"))).alias("max_date")).collect()[0]
+        max_date_row = newsdf.agg(max(col("published_ts")).alias("max_date")).collect()[0]
         max_date = max_date_row["max_date"]
         self.logger.info(f"MAX DATE: {max_date}")
 
@@ -70,11 +70,14 @@ class NewsQualityProducer(SchemaRegistryObj):
             self.logger.info(f"DATATYPE Column {column}: {dtype}")
 
         #Eliminate old published from nearest scraped timestamp to now
-        latest_update = get_latest_partition_datetime("raw", "news")
+        latest_update = get_latest_partition_datetime("silver", "news")
+
         today = datetime.today()
         print(today)
-
-        newsdf = newsdf.filter((col('published') > latest_update) & (col('published') <= today))
+        if latest_update:
+            newsdf = newsdf.filter((col('published_ts') > latest_update) & (col('published_ts') <= today))
+        newsdf = newsdf.drop("published_ts")
+        newsdf = newsdf.withColumnRenamed("authors", "author")
         sumcount = newsdf.count()
         self.logger.info(f"SUM OF RECORD after filtering TIMESTAMP: {sumcount}")
 

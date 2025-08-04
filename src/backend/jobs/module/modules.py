@@ -16,7 +16,6 @@ def get_latest_partition_datetime(bucket, prefix):
     pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
 
     timestamps = []
-
     # Hỗ trợ cả path có 6 phần (full datetime) và 4 phần (date + hour)
     pattern_full = re.compile(r"(\d{4})/(\d{2})/(\d{2})/(\d{2})/(\d{2})/(\d{2})")
     pattern_hour = re.compile(r"(\d{4})/(\d{2})/(\d{2})/(\d{2})")
@@ -37,7 +36,7 @@ def get_latest_partition_datetime(bucket, prefix):
                 timestamps.append(datetime(year, month, day, hour))
 
     if not timestamps:
-        print("❌ No valid timestamp found in keys.")
+        print("No valid timestamp found in keys")
         return None
 
     latest = max(timestamps)
