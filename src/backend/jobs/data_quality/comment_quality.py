@@ -70,11 +70,11 @@ class CommentsQualityProducer(SchemaRegistryObj):
             
         commentsdf = commentsdf.withColumn("created_utc", to_timestamp(col("created_utc")))
         commentsdf.show(20)
-        min_date_row = commentsdf.agg(min(to_date(col("created_utc"))).alias("min_date")).collect()[0]
+        min_date_row = commentsdf.agg(min(col("created_utc")).alias("min_date")).collect()[0]
         min_date = min_date_row["min_date"]
         self.logger.info(f"MIN DATE: {min_date}")
 
-        max_date_row = commentsdf.agg(max(to_date(col("created_utc"))).alias("max_date")).collect()[0]
+        max_date_row = commentsdf.agg(max(col("created_utc")).alias("max_date")).collect()[0]
         max_date = max_date_row["max_date"]
         self.logger.info(f"MAX DATE: {max_date}")
 
@@ -83,11 +83,12 @@ class CommentsQualityProducer(SchemaRegistryObj):
             self.logger.info(f"DATATYPE Column {column}: {dtype}")
 
         #Eliminate old published from nearest scraped timestamp to now
-        latest_update = get_latest_partition_datetime("raw", "comments")
+        latest_update = get_latest_partition_datetime("silver", "comments")
         today = datetime.today()
         print(today)
 
-        commentsdf = commentsdf.filter((col('created_utc') > latest_update) & (col('created_utc') <= today))
+        if latest_update:
+            commentsdf = commentsdf.filter((col('created_utc') > latest_update) & (col('created_utc') <= today))
         sumcount = commentsdf.count()
         self.logger.info(f"SUM OF RECORD after filtering TIMESTAMP: {sumcount}")
 

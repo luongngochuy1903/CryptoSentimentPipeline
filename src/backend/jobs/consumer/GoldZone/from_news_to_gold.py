@@ -14,14 +14,15 @@ latest_partition = get_latest("silver.news")
 
 silverNewsDf = spark.sql(f"""
     SELECT * FROM silver.news
-        WHERE year = {now.year} AND month = {now.month} AND day = {latest_partition["day"]} AND hour = {latest_partition["hour"]}
+        WHERE year = {now.year} AND month = {now.month} AND day = {latest_partition["day"]} 
 """
 )
 spec = Window.orderBy("published")
 
 goldNewsDf = silverNewsDf.withColumn("id", F.row_number().over(spec) + F.lit(max_id))
-goldNewsDf = goldNewsDf.withColumn("published", F.date_format("published", "yyyyMMdd"))
-goldTopicDf = spark.read.table("iceberg.gold.dim_topic")
+goldNewsDf.printSchema()
+goldNewsDf = goldNewsDf.withColumn("timestamp_id", F.date_format("published", "yyyyMMdd"))
+goldTopicDf = spark.read.table("gold.dim_topic")
 goldNewsDf = goldNewsDf.join(goldTopicDf, goldNewsDf["tag"] == goldTopicDf["topic"], how="left").select(goldNewsDf["*"], goldTopicDf["id_topic"])
-goldNewsDf.drop("tag")
+goldNewsDf = goldNewsDf.drop("tag")
 goldNewsDf.writeTo("iceberg.gold.dim_news").append()
