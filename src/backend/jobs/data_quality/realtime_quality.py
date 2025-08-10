@@ -42,6 +42,7 @@ def main():
             "title":"News",
             "type":"object",
             "properties": {
+                "realtime_id":{"type":"number"},
                 "symbol": {"type":"string"},
                 "name": {"type":"string"},
                 "interval": {"type":"string"},
@@ -55,7 +56,7 @@ def main():
                 "lowest": {"type":"number"},
                 "tag": {"type":"string"}
             },
-            "required": ["symbol", "name", "interval", "starttime", "endtime", "volume", "quotevolume", "open", "close", "highest", "lowest", "tag"]
+            "required": ["realtime_id", "symbol", "name", "interval", "starttime", "endtime", "volume", "quotevolume", "open", "close", "highest", "lowest", "tag"]
         }
         """
 

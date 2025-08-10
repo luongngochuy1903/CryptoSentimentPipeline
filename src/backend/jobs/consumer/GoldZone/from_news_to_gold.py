@@ -14,7 +14,7 @@ latest_partition = get_latest("silver.news")
 
 silverNewsDf = spark.sql(f"""
     SELECT * FROM silver.news
-        WHERE year = {now.year} AND month = {now.month} AND day = {latest_partition["day"]} 
+        WHERE year = {now.year} AND month = {now.month} AND day = {latest_partition["day"] } AND hour = {latest_partition["hour"]}
 """
 )
 spec = Window.orderBy("published")
