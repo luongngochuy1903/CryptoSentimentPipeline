@@ -12,22 +12,14 @@ class RealtimeQualityProducer(SchemaRegistryObj):
             .appName("Data quality check") \
             .getOrCreate()
         latest = get_latest_partition_datetime("raw", "realtimecoin")
-        coindf = spark.read.json(f"s3a://raw/realtimecoin/{latest.year}/{latest.month:02}/{latest.day:02}/{latest.hour:02}/{latest.minute:02}/{latest.second:02}")
+        coindf = spark.read.json(f"s3a://raw/realtimecoin/{latest.year}/{latest.month:02}/{latest.day:02}/{latest.hour:02}")
         self.logger.info(coindf.schema.simpleString())
         coindf.printSchema()
-
-        # #Checking null
-        # from pyspark.sql.functions import col
-        # num_of_null_text = coindf.filter((col("text").isNull()) | (col("text") == "")).count()
-        # self.logger.info(f"Text columns WHICH IS NULL:{num_of_null_text}")
-
-        # num_of_null_published = coindf.filter(col("published").isNull()).count()
-        # self.logger.info(f"Published columns WHICH IS NULL:{num_of_null_published}")
-
+        
         #Cheking date
-        from pyspark.sql.functions import col, from_unixtime, cast
-        coindf = coindf.withColumn("starttime", from_unixtime(col("starttime").cast("int")/1000))
-        coindf = coindf.withColumn("endtime", from_unixtime(col("endtime").cast("int")/1000))
+        from pyspark.sql.functions import col, to_timestamp, cast
+        coindf = coindf.withColumn("starttime", to_timestamp(col("starttime"), "yyyy-MM-dd HH:mm:ss"))
+        coindf = coindf.withColumn("endtime", to_timestamp(col("endtime"), "yyyy-MM-dd HH:mm:ss"))
 
         #Checking volume, price
         coindf = coindf.withColumn("volume", col("volume").cast('double'))

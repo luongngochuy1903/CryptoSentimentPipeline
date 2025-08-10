@@ -3,7 +3,6 @@ from airflow.operator.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator
 from datetime import datetime
-from s3sensorhook import S3NewFileSensor
 import sys, os
 sys.path.append("/opt/airflow")
 from modules.s3sensorhook  import S3NewFileSensor
@@ -35,9 +34,17 @@ with DAG("News with Comments ETL pipelines",
         bash_command="docker exec cryptoreadproject-spark-master-1 spark-submit --master spark://spark-master:7077 /opt/spark_jobs/data_quality/news_quality.py"
     )
 
-    news_consume_from_stage_2 = BashOperator(
-        task_id="Consuming_from_kafka_stage_2_news",
-        bash_command="docker exec cryptoreadproject-spark-master-1 spark-submit --master spark://spark-master:7077 /opt/spark_jobs/consumer/SilverZone/news_to_silver.py"
+    news_checking_minio_stage2 = S3NewFileSensor(
+        task_id="Checking_raw_file_exists_news",
+        aws_access_key="",
+        aws_secret_key="",
+        endpoint='http://minio:9000',
+        bucket="silver",
+        prefix="news",
+        soft_fail=True,
+        poke_interval=30,
+        timeout=14300,
+        mode="poke"
     )
 
     news_to_gold = BashOperator(
@@ -69,9 +76,17 @@ with DAG("News with Comments ETL pipelines",
         bash_command="docker exec cryptoreadproject-spark-master-1 spark-submit --master spark://spark-master:7077 /opt/spark_jobs/data_quality/comment_quality.py"
     )
 
-    cmt_consume_from_stage_2 = BashOperator(
-        task_id="Consuming_from_kafka_stage_2_comments",
-        bash_command="docker exec cryptoreadproject-spark-master-1 spark-submit --master spark://spark-master:7077 /opt/spark_jobs/consumer/SilverZone/comments_to_silver.py"
+    cmt_checking_minio_stage2 = S3NewFileSensor(
+        task_id="Checking_raw_file_exists_comments",
+        aws_access_key="",
+        aws_secret_key="",
+        endpoint='http://minio:9000',
+        bucket="silver",
+        prefix="comments",
+        soft_fail=True,
+        poke_interval=30,
+        timeout=14300,
+        mode="poke"
     )
 
     cmt_to_gold = BashOperator(
@@ -81,6 +96,6 @@ with DAG("News with Comments ETL pipelines",
 
     dag_finished = EmptyOperator(task_id="stop")
 
-    news_from_source >> news_checking_minio_stage1 >> news_consume_from_stage_2 >> news_upload_to_kafka_stage_2 >> news_to_gold >> dag_finished
-    cmt_from_source >> cmt_checking_minio_stage1 >> cmt_consume_from_stage_2 >> cmt_upload_to_kafka_stage_2 >> cmt_to_gold >> dag_finished
+    news_from_source >> news_checking_minio_stage1 >> news_upload_to_kafka_stage_2 >> news_checking_minio_stage2 >> news_to_gold >> dag_finished
+    cmt_from_source >> cmt_checking_minio_stage1 >> cmt_upload_to_kafka_stage_2 >> cmt_checking_minio_stage2 >> cmt_to_gold >> dag_finished
     

@@ -1,0 +1,6 @@
+pandas
+psycopg2
+streamlit
+altair 
+streamlit_autorefresh
+ta
