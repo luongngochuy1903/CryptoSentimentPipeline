@@ -75,15 +75,15 @@ class SchemaRegistryConsumer():
             .withColumn("hour", hour("created_ts")) 
         
         df = df.drop("created_ts")
-        if "realtime" not in path:
+        if "realtime" not in path and "statistic" not in path and "sentiment" not in path:
             if "comments" in path:
                 df = df.withColumn("created_utc", to_timestamp(col("created_utc")))
             else:
                 df = df.withColumn("published", to_timestamp("published", "yyyy--MM--dd'T'HH:mm:ss'Z'"))
             df.writeTo(f"silver.{path}").append()
         else:
-            df = df.withColumn("starttime", from_unixtime((col("starttime") / 1000).cast("long")).cast("timestamp"))
-            df = df.withColumn("endtime", from_unixtime((col("endtime") / 1000).cast("long")).cast("timestamp"))
+            stadf = stadf.withColumn("starttime", to_timestamp(col("starttime"), "yyyy-MM-dd HH:mm:ss"))
+            stadf = stadf.withColumn("endtime", to_timestamp(col("endtime"), "yyyy-MM-dd HH:mm:ss"))
             df.printSchema()
             df.writeTo(f"silver.{path}").append()
 

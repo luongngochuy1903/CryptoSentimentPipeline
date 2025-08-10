@@ -6,11 +6,12 @@ realtime_schema = """
     "title":"News",
     "type":"object",
     "properties": {
+        "realtime_id":{"type":"number"},
         "symbol": {"type":"string"},
         "name": {"type":"string"},
         "interval": {"type":"string"},
-        "starttime": {"type":"string", "format":"date-time"},
-        "endtime": {"type":"string", "format":"date-time"},
+        "starttime": {"type":"string"},
+        "endtime": {"type":"string"},
         "volume": {"type":"number"},
         "quotevolume": {"type":"number"},
         "open": {"type":"number"},
@@ -19,9 +20,9 @@ realtime_schema = """
         "lowest": {"type":"number"},
         "tag": {"type":"string"}
     },
-    "required": ["symbol", "name", "interval", "starttime", "endtime", "volume", "quotevolume", "open", "close", "highest", "lowest", "tag"]
+    "required": ["realtime_id", "symbol", "name", "interval", "starttime", "endtime", "volume", "quotevolume", "open", "close", "highest", "lowest", "tag"]
 }
 """
 
-consumer = SchemaRegistryConsumer("realtime_raw", realtime_schema, "NewsCon", "realtime-group-stage2")
+consumer = SchemaRegistryConsumer("realtime_raw", realtime_schema, "RealtimeCon", "realtime-group-stage2")
 consumer.polling("Realtime-to-Silver", "realtime")

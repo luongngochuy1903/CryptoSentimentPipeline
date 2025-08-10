@@ -70,7 +70,7 @@ if __name__ == "__main__":
                 hour INT
             )
             USING ICEBERG
-            PARTITIONED BY (year, month, day)
+            PARTITIONED BY (year, month, day, hour)
             LOCATION 's3a://silver/news/'
         """)
 
@@ -93,13 +93,14 @@ if __name__ == "__main__":
                 hour INT
             )
             USING ICEBERG
-            PARTITIONED BY (year, month, day)
+            PARTITIONED BY (year, month, day, hour)
             LOCATION 's3a://silver/comments/'
         """)
 
     spark.sql("""
 
             CREATE TABLE IF NOT EXISTS silver.realtime (
+                event_id INT,
                 symbol STRING,
                 name STRING,
                 interval STRING,
@@ -121,48 +122,87 @@ if __name__ == "__main__":
             PARTITIONED BY (year, month, day, hour)
             LOCATION 's3a://silver/realtime/'
         """)
+    
+    spark.sql("""
+        CREATE TABLE IF NOT EXISTS silver.technical (
+        id INT,
+        event_id INT,
+        endtime TIMESTAMP,
+        symbol STRING,
+        sma20 DOUBLE,
+        ema12 DOUBLE,
+        rsi10 DOUBLE,
+        macd DOUBLE,
+        bb DOUBLE,
+        atr DOUBLE,
+        va_high DOUBLE,
+        va_low DOUBLE,
+        POC DOUBLE,
+        year INT,
+        month INT,
+        day INT,
+        hour INT
+    )
+    USING ICEBERG
+    PARTITIONED BY (year, month, day, hour)
+    LOCATION 's3a://silver/technical/';
+    """
+    )
+
+    spark.sql("""
+        CREATE TABLE IF NOT EXISTS silver.sentiment (
+        id INT,
+        event_id INT,
+        endtime TIMESTAMP,
+        RSI_sen STRING,
+        MACD_sen STRING,
+        EMA_sen STRING,
+        bb_sen STRING,
+        SMA_sen STRING,
+        ATR_sen STRING,
+        year INT,
+        month INT,
+        day INT,
+        hour INT
+    )
+    USING ICEBERG
+    PARTITIONED BY (year, month, day, hour)
+    LOCATION 's3a://silver/sentiment/';
+    """
+    )
     # Create table for ML table
 
     # ------------------CREATE GOLD LAYER----------------------
-    spark.sql("""CREATE TABLE IF NOT EXISTS gold.statistic
+    spark.sql("""CREATE TABLE IF NOT EXISTS gold.dim_coin_sentiment_statistic
             (
                 id INT,
                 coin_id STRING,
                 realtime_id INT,
                 timestamp_id STRING,
-                RSI FLOAT,
-                MACD FLOAT,
+                rsi10 FLOAT,
+                rsi_sen STRING,
+                macd FLOAT,
+                macd_sen STRING,
                 bolling_band FLOAT,
-                SMA FLOAT,
-                EMA FLOAT,
-                ATR FLOAT,
+                bb_sen STRING,
+                sma20 FLOAT,
+                sma_sen STRING,
+                ema12 FLOAT,
+                ema_sen STRING,
+                atr FLOAT,
+                atr_sen STRING,
+                va_high FLOAT,
+                va_low FLOAT,
+                POC FLOAT,
+                sentiment_signal STRING,
                 year INT,
                 month INT,
                 day INT,
                 hour INT,
-                minutes INT
             )
             USING ICEBERG
             PARTITIONED BY (coin_id)
-            LOCATION 's3a://gold/statistic/'
-            """)
-
-    spark.sql("""CREATE TABLE IF NOT EXISTS gold.sentiment
-            (
-                id INT,
-                coin_id STRING,
-                sentiment_signal STRING,
-                timestamp_id STRING,
-                RSI FLOAT,
-                MACD FLOAT,
-                bolling_band FLOAT,
-                SMA FLOAT,
-                EMA FLOAT,
-                ATR FLOAT
-            )
-            USING ICEBERG
-            PARTITIONED BY (coin_id)
-            LOCATION 's3a://gold/sentiment/'
+            LOCATION 's3a://gold/statistic_sentiment/'
             """)
 
     spark.sql("""CREATE TABLE IF NOT EXISTS gold.dim_time

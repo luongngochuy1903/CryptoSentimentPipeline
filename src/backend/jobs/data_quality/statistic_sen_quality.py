@@ -58,7 +58,7 @@ def main():
     "properties": {
         "id": {"type": "integer"},
         "event_id": {"type": "integer"},
-        "endtime": {"type": "string", "format": "date-time"},
+        "endtime": {"type": "string"},
         "symbol": {"type": "string"},
         "sma20": {"type": "number"},
         "ema12": {"type": "number"},
@@ -84,7 +84,7 @@ def main():
     "properties": {
         "id": {"type": "integer"},
         "event_id": {"type": "integer"},
-        "endtime": {"type": "string", "format": "date-time"},
+        "endtime": {"type": "string"},
         "RSI_sen": {"type": "string"},
         "MACD_sen": {"type": "string"},
         "EMA_sen": {"type": "string"},
