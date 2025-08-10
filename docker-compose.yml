@@ -72,7 +72,6 @@ services:
       AWS_REGION: us-east-1
     volumes:
       - ./src/backend/jobs:/opt/spark_jobs
-      - ./src/backend/consumer/streaming:/opt/spark_jobs/streaming
       - ./spark/spark-config/spark-defaults.conf:/opt/bitnami/spark/conf/spark-defaults.conf
     depends_on:
       - postgres
@@ -98,7 +97,6 @@ services:
       SPARK_WORKER_CORES: 2
     volumes:
       - ./src/backend/jobs:/opt/spark_jobs
-      - ./src/backend/consumer/streaming:/opt/spark_jobs/streaming
       - ./spark/spark-config/spark-defaults.conf:/opt/bitnami/spark/conf/spark-defaults.conf
     depends_on:
       - postgres
@@ -136,6 +134,7 @@ services:
     restart: always
     volumes:
       - ./sql:/docker-entrypoint-initdb.d
+      - ./src/backend/db/backend.sql:/init_sql/backend.sql
     networks:
       - crypto-network
 
@@ -215,6 +214,20 @@ services:
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_ENABLE: 'false'
       PORT: 9021
+    networks:
+      - crypto-network
+
+  streamlit:
+    build: ./streamlit_app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./src/frontend:/app/src
+      - ./config:/app/config
+      - ./utils:/app/utils
+    depends_on:
+      - kafka
+      - postgres
     networks:
       - crypto-network
 

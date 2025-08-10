@@ -2,7 +2,7 @@ from scraping.reddit import run_comment
 from confluent_kafka import Producer
 from dateutil.parser import parse
 import json, logging, os, sys
-from datetime import datetime
+from datetime import datetime, timezone
 log_dir = "/app/scripts/producer/logs"
 os.makedirs(log_dir, exist_ok=True)
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -46,9 +46,12 @@ class Batch_Comment_Manager():
         else:
             logger.info(f"Delivered to {msg.topic()} [{msg.partition()}] offset {msg.offset()}")
 
-    def check_quality(results):
+    def check_quality(self, results):
         logger.info(f"Tổng số bài: {len(results)}")
-        dates = [parse(item['created_utc']) for item in results if item['created_utc']]
+        dates = [
+            datetime.fromtimestamp(item['created_utc'], tz=timezone.utc)
+            for item in results if item['created_utc']
+        ]
         logger.info(f"Ngày cũ nhất: {min(dates).isoformat()}")
         logger.info(f"Ngày mới nhất: {max(dates).isoformat()}")
 

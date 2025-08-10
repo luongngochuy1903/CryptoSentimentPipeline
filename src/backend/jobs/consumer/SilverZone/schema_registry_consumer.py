@@ -91,8 +91,7 @@ class SchemaRegistryConsumer():
         json_deserializer = JSONDeserializer(self.schema, from_dict=self.dict_to_dict)
         self.subcribe_topic()
         try:
-            starttime = time.time()
-            while time.time() - starttime < 300:
+            while True:
                 try:
                     messages = self.consumer.consume(timeout=1.5)
                     if not messages:

@@ -16,7 +16,3 @@ RUN curl -L https://repo1.maven.org/maven2/software/amazon/awssdk/url-connection
 RUN curl -L https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.5.0/iceberg-spark-runtime-3.5_2.12-1.5.0.jar \
     -o /opt/bitnami/spark/jars/iceberg-spark-runtime-3.5_2.12.jar
 RUN curl -L https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-aws-bundle/1.5.0/iceberg-aws-bundle-1.5.0.jar --output /opt/bitnami/spark/jars/iceberg-aws-bundle-1.5.0.jar
-RUN curl -L https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/3.5.0/spark-sql-kafka-0-10_2.12-3.5.0.jar \
-    -o /opt/bitnami/spark/jars/spark-sql-kafka-0-10_2.12-3.5.0.jar
-RUN curl -L https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/3.5.0/kafka-clients-3.5.0.jar \
-    -o /opt/bitnami/spark/jars/kafka-clients-3.5.0.jar

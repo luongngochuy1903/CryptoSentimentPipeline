@@ -11,3 +11,4 @@ feedparser
 websocket-client
 psycopg2
 minio
+streamlit

@@ -20,7 +20,7 @@ class NewsQualityProducer(SchemaRegistryObj):
         newsdf.printSchema()
 
         #Checking null
-        from pyspark.sql.functions import col, count
+        from pyspark.sql.functions import col
         null_text = newsdf.filter((col("text").isNotNull()) & (col("text") != "") & (col("published").isNotNull()) & (col("published") != ""))
         num_of_null_text = null_text.count()
         self.logger.info(f"Text columns WHICH IS NULL:{newsdf.count() - num_of_null_text}")
