@@ -6,7 +6,7 @@ import os, sys, logging
 import time
 from datetime import datetime
 
-spark = SparkSession.builder.appName("SchemaRegistryConsumer").config("spark.cores.max", "1").config("spark.executor.cores", "1").getOrCreate()
+spark = SparkSession.builder.appName("SchemaRegistryConsumer").config("spark.executor.memory", "512m").config("spark.cores.max", "1").config("spark.executor.cores", "1").getOrCreate()
 class SchemaRegistryConsumer():
     def __init__(self, topic, schema, consumer, group_id):
         self.topic = topic
@@ -59,7 +59,7 @@ class SchemaRegistryConsumer():
             'group.id': group_id,
             'enable.auto.commit': False,
             "heartbeat.interval.ms": 3000,
-            'auto.offset.reset': 'latest'
+            'auto.offset.reset': 'earliest'
         })
     
     def handle_msg(self, msg, path):
@@ -82,14 +82,16 @@ class SchemaRegistryConsumer():
                 df = df.withColumn("published", to_timestamp("published", "yyyy--MM--dd'T'HH:mm:ss'Z'"))
             df.writeTo(f"silver.{path}").append()
         else:
-            stadf = stadf.withColumn("starttime", to_timestamp(col("starttime"), "yyyy-MM-dd HH:mm:ss"))
-            stadf = stadf.withColumn("endtime", to_timestamp(col("endtime"), "yyyy-MM-dd HH:mm:ss"))
+            df = df.withColumn("endtime", to_timestamp(col("endtime"), "yyyy-MM-dd'T'HH:mm:ss.SSSX"))
+            if "realtime" in path:
+                df = df.withColumn("starttime", to_timestamp(col("starttime"), "yyyy-MM-dd'T'HH:mm:ss.SSSX"))
             df.printSchema()
             df.writeTo(f"silver.{path}").append()
 
     def polling(self, consumer_name, path):
         json_deserializer = JSONDeserializer(self.schema, from_dict=self.dict_to_dict)
         self.subcribe_topic()
+        checking = False
         try:
             while True:
                 try:
@@ -111,10 +113,13 @@ class SchemaRegistryConsumer():
                         batch.append(python_dict)
                     try:
                         self.handle_msg(batch, path)
+                        checking = True
                         self.consumer.commit(asynchronous=True)
                     except Exception as e:
                         self.logger.info(f"handle_msg fail: {e}")
-
+                    
+                    if checking:
+                        break
                 except Exception as e:
                     self.logger.info(f"Fail when consuming messages from {self.topic}: {e}")
                 

@@ -1,9 +1,9 @@
 query_get_coin_data="""
         WITH latest_events AS (
-            SELECT * FROM event
+            SELECT symbol, endtime, close FROM event
                 WHERE symbol = %s
                 ORDER BY endtime DESC
-                LIMIT 200
+                LIMIT 350
             ),
 
             price_24h AS (
@@ -25,7 +25,7 @@ query_get_raw_statistic="""
                 LIMIT 26
         """
 query_load_back_to_db = """
-        INSERT INTO technical(event_id, symbol, sma20, ema12, rsi_10, macd, bb, atr, vah, val, POC)
+        INSERT INTO technical(event_id, endtime, symbol, sma20, ema12, rsi10, macd, bb, atr, va_high, va_low, poc)
         VALUES %s
 """
 #----------------------------------------------
@@ -74,4 +74,9 @@ query_get_24h_min_max = """
 #----------------------------------------------
 query_get_news = """
         SELECT title, published, url from news
+"""
+#----------------------------------------------
+query_load_back_to_db_sen = """
+        INSERT INTO sentiment(event_id, endtime, rsi_sen, macd_sen, ema_sen, bb_sen, sma_sen, atr_sen)
+        VALUES %s
 """

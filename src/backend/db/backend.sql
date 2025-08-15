@@ -10,7 +10,8 @@ CREATE TABLE "event" (
 	"open" NUMERIC NOT NULL,
 	"close" NUMERIC NOT NULL,
 	"highest" NUMERIC,
-	"lowest" NUMERIC
+	"lowest" NUMERIC,
+	"tag" VARCHAR(20)
 );
 
 CREATE INDEX idx_event_symbol_time ON event(symbol, endtime);
@@ -19,17 +20,17 @@ CREATE INDEX idx_event_symbol_time ON event(symbol, endtime);
 CREATE TABLE "technical" (
 	"id" SERIAL PRIMARY KEY,
 	"event_id" INTEGER,
-	"endtime" TIMESTAMPTZ NOT NULL,
-	"symbol" VARCHAR(255) NOT NULL,
-	"sma20" NUMERIC NOT NULL UNIQUE,
-	"ema12" NUMERIC NOT NULL,
-	"rsi10" NUMERIC NOT NULL,
-	"macd" NUMERIC NOT NULL,
-	"bb" NUMERIC NOT NULL,
-	"atr" NUMERIC NOT NULL,
-	"va_high" NUMERIC NOT NULL,
-	"va_low" NUMERIC NOT NULL,
-	"POC" NUMERIC NOT NULL,
+	"endtime" TIMESTAMPTZ,
+	"symbol" VARCHAR(255),
+	"sma20" NUMERIC,
+	"ema12" NUMERIC,
+	"rsi10" NUMERIC,
+	"macd" NUMERIC,
+	"bb" NUMERIC,
+	"atr" NUMERIC,
+	"va_high" NUMERIC,
+	"va_low" NUMERIC,
+	"poc" NUMERIC,
 	CONSTRAINT fk_event
         FOREIGN KEY("event_id")
         REFERENCES "event"("event_id")
@@ -39,10 +40,11 @@ CREATE TABLE "technical" (
 -- Bảng news (giữ bản hợp lệ)
 CREATE TABLE "news" (
 	"id" SERIAL PRIMARY KEY,
-	"title" VARCHAR(255) NOT NULL,
-	"published" TIMESTAMPTZ NOT NULL,
-	"text" VARCHAR(255) NOT NULL,
+	"domain" VARCHAR(100) NOT NULL,
+	"title" TEXT NOT NULL,
 	"url" VARCHAR(255) NOT NULL,
+	"published" TIMESTAMPTZ NOT NULL,
+	"author" VARCHAR(255) NOT NULL,
 	"tag" VARCHAR(60) NOT NULL
 );
 
@@ -51,12 +53,12 @@ CREATE TABLE "sentiment" (
 	"id" SERIAL PRIMARY KEY,
 	"event_id" INTEGER,
 	"endtime" TIMESTAMPTZ NOT NULL,
-	"RSI_sen" VARCHAR(255) NOT NULL,
-	"MACD_sen" VARCHAR(255) NOT NULL,
-	"EMA_sen" VARCHAR(255) NOT NULL,
+	"rsi_sen" VARCHAR(255) NOT NULL,
+	"macd_sen" VARCHAR(255) NOT NULL,
+	"ema_sen" VARCHAR(255) NOT NULL,
 	"bb_sen" VARCHAR(255) NOT NULL,
-	"SMA_sen" VARCHAR(255) NOT NULL,
-	"ATR_sen" VARCHAR(255) NOT NULL
+	"sma_sen" VARCHAR(255) NOT NULL,
+	"atr_sen" VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE "event_max_cache" (

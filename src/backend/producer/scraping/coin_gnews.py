@@ -65,7 +65,7 @@ def run_coin_gnews():
         results = []
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(scrape_article, article) for article in articles]
-            print(f"Tổng số bài: {len(articles)}")
+            print(f"Sum of news: {len(articles)}")
             for future in as_completed(futures):
                 results.append(future.result())
 

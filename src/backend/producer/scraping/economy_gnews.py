@@ -68,9 +68,4 @@ def run_economy_gnews():
             results.append(future.result())
 
     print("OK!" if results else "API does not return any result")
-    # 5. Ghi file .jsonl
-    # with open("economy_news_gnews.jsonl", "w", encoding="utf-8") as f:
-    #     for item in results:
-    #         json.dump(item, f, ensure_ascii=False)
-    #         f.write("\n")
     return results

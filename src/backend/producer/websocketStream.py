@@ -16,7 +16,7 @@ symbol_name_map = {
     "SOLUSDT": "Solana",
     "XRPUSDT": "XRP"
 }
-streams = [f"{symbol}@kline_1m" for symbol in symbols]
+streams = [f"{symbol}@kline_1s" for symbol in symbols]
 
 #Checking lỗi
 def acked(err, msg):

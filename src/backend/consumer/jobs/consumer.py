@@ -37,18 +37,17 @@ class ConsumerManager():
         print(f"Start consuming: {consumer_name}")
         try:
             while True:
-                msg = consumer.consume(timeout=1.5)
-
+                msg = consumer.consume(timeout=1.0)
                 if not msg:
-                    if self.batch:
-                        print(f"{consumer_name} received: {self.batch}")
-                        try:
-                            self.handle_msg() 
-                            self.batch = [] 
-                            consumer.commit(asynchronous=True)
-                        except Exception as e:
-                            print(f"handle_msg fail: {e}")
                     continue
+                if len(self.batch) >= 5:
+                    print(f"{consumer_name} received: {self.batch}")
+                    try:
+                        self.handle_msg() 
+                        self.batch = [] 
+                        consumer.commit(asynchronous=True)
+                    except Exception as e:
+                        print(f"handle_msg fail: {e}")
                 
                 for message in msg:
                     try:
@@ -66,5 +65,27 @@ class ConsumerManager():
             pass
         finally:
             print(f"Closing consumer: {consumer_name}")
+            consumer.commit()
+            consumer.close()
+    
+    def polling_batch(self, consumer_name, consumer):
+        print(f"Start consuming: {consumer_name}")
+        start_time = time.time()
+        try:
+            while True:
+                msg = consumer.consume(timeout=1.0)
+                if msg:
+                    for message in msg:
+                        if message.error():
+                            print(f"{consumer_name} error: {message.error()}")
+                            continue
+                        value = json.loads(message.value().decode("utf-8"))
+                        self.batch.append(value)
+
+                # Điều kiện dừng
+                if (time.time() - start_time) > 60:
+                    print(f"{consumer_name} finished batch with {len(self.batch)} messages")
+                    break
+        finally:
             consumer.commit()
             consumer.close()

@@ -7,7 +7,6 @@ from psycopg2.extras import execute_values
 from minio import Minio
 from minio.error import S3Error
 from io import BytesIO
-import ta
 import os, sys, json, uuid
 
 BASE_URL = os.path.dirname(__file__)
@@ -35,7 +34,7 @@ class RealTimeConsumer(ConsumerManager):
             password=POSTGRES_PASSWORD,
             dbname="backend"
         )
-        self.cursor = self.postgres_connect.cursor()
+        self.cursor = None
         self.minio_client = Minio(
             endpoint='minio:9000',
             access_key=MINIO_ACCESS_KEY,
@@ -48,6 +47,7 @@ class RealTimeConsumer(ConsumerManager):
         if not self.minio_client.bucket_exists(bucket_name):
             self.minio_client.make_bucket(bucket_name)
         data = self.batch
+        print(data)
         #Pushing to postgres
         db_data = []
         try:
@@ -64,16 +64,17 @@ class RealTimeConsumer(ConsumerManager):
                 highest = Decimal(row.get("highest"))
                 lowest = Decimal(row.get("lowest"))
                 tag = row.get("tag")
-                db_data.append((symbol, name, interval, starttime, endtime, volume, quotevolume, open, close, highest, lowest))
+                db_data.append((symbol, name, interval, starttime, endtime, volume, quotevolume, open, close, highest, lowest, tag))
                 print(f"hehe: {endtime}")
         except Exception as e:
             print(f"Fail: {e}")
         if db_data:
             try:
+                self.cursor = self.postgres_connect.cursor()
                 execute_values(
                     self.cursor,
                     """
-                    INSERT INTO event(symbol, name, interval, starttime, endtime, volume, quotevolume, open, close, highest, lowest)
+                    INSERT INTO event(symbol, name, interval, starttime, endtime, volume, quotevolume, open, close, highest, lowest, tag)
                     VALUES %s
                     """,
                     db_data

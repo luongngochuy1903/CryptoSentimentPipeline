@@ -5,15 +5,15 @@ import altair as alt
 from streamlit_autorefresh import st_autorefresh
 from datetime import timezone, timedelta
 
-from query import  query_get_coin_data, query_load_back_to_db, query_get_24h_min_max, query_get_raw_statistic
-from modules import fetch_min_max, fetch_coin_price, draw_chart, calculate_technical
+from query import  query_get_coin_data, query_load_back_to_db, query_get_24h_min_max, query_get_raw_statistic, query_load_back_to_db_sen
+from modules import fetch_min_max, fetch_coin_price, draw_chart, calculate_technical, label_detach
 
 # Thiết lập page
 st.set_page_config(page_title="CRYPTO AI SENTIMENT SUPPORT", layout="wide")
 st.title("Coin Market")
 
 # Refresh mỗi 3 giây
-st_autorefresh(interval=2000, key="data_refresh")
+st_autorefresh(interval=3000, key="data_refresh")
 
 # Chọn coin
 coin = st.selectbox(
@@ -25,7 +25,9 @@ coin = st.selectbox(
 # Lấy dữ liệu
 df_realtime_price_24h = fetch_coin_price(coin, query_get_coin_data)
 df_technical = calculate_technical(coin, query_get_raw_statistic, query_load_back_to_db)
+print(f"hehe: {df_realtime_price_24h['endtime'].iloc[0]}")
 df_min_max = fetch_min_max(coin, query_get_24h_min_max)
+df_sentiment = label_detach(df_technical, query_load_back_to_db_sen)
 
 # Hiển thị biểu đồ
 if not df_realtime_price_24h.empty:
@@ -74,25 +76,25 @@ if not df_realtime_price_24h.empty:
     col4, col5, col6 = st.columns(3)
     col7, col8, col9 = st.columns(3)
     with col1:
-        st.metric(label="RSI (14)", value=f"{df_technical['rsi10'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="RSI (14)", value=f"{df_technical['rsi10'].iloc[0]:.2f}", delta=f"{df_sentiment['rsi_sen'].iloc[0]}", delta_color="inverse", border=True)
     with col2:
-        st.metric(label="SMA (20)", value=f"{df_technical['sma_20'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="SMA (20)", value=f"{df_technical['sma20'].iloc[0]:.2f}", delta=f"{df_sentiment['sma_sen'].iloc[0]}", delta_color="inverse", border=True)
     with col3:
-        st.metric(label="EMA (12)", value=f"{df_technical['ema_12'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="EMA (12)", value=f"{df_technical['ema12'].iloc[0]:.2f}", delta=f"{df_sentiment['ema_sen'].iloc[0]}", delta_color="inverse", border=True)
 
     with col4:
-        st.metric(label="MACD", value=f"{df_technical['macd'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="MACD", value=f"{df_technical['macd'].iloc[0]:.2f}", delta=f"{df_sentiment['macd_sen'].iloc[0]}", delta_color="inverse", border=True)
     with col5:
-        st.metric(label="Bolling bands", value=f"{df_technical['bb'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="Bolling bands", value=f"{df_technical['bb'].iloc[0]:.2f}", delta=f"{df_sentiment['bb_sen'].iloc[0]}", delta_color="inverse", border=True)
     with col6:
-        st.metric(label="ATR", value=f"{df_technical['atr'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="ATR", value=f"{df_technical['atr'].iloc[0]:.2f}", delta=f"{df_sentiment['atr_sen'].iloc[0]}", delta_color="inverse", border=True)
     
     with col7:
-        st.metric(label="va_high", value=f"{df_technical['vah'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="va_high", value=f"{df_technical['va_high'].iloc[0]:.2f}", delta="Neutral", delta_color="inverse", border=True)
     with col8:
-        st.metric(label="va_low", value=f"{df_technical['val'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="va_low", value=f"{df_technical['va_low'].iloc[0]:.2f}", delta="Neutral", delta_color="inverse", border=True)
     with col9:
-        st.metric(label="POC", value=f"{df_technical['poc'].iloc[-1]:.2f}", delta="Neutral", delta_color="inverse", border=True)
+        st.metric(label="POC", value=f"{df_technical['poc'].iloc[0]:.2f}", delta="Neutral", delta_color="inverse", border=True)
     
 
     st.markdown(f"🕒 Cập nhật: {pd.to_datetime(df_realtime_price_24h['endtime'].max(), utc=True).astimezone(timezone(timedelta(hours=7)))}")
