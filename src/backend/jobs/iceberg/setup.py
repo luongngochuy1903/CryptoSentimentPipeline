@@ -100,7 +100,7 @@ if __name__ == "__main__":
     spark.sql("""
 
             CREATE TABLE IF NOT EXISTS silver.realtime (
-                event_id INT,
+                realtime_id INT,
                 symbol STRING,
                 name STRING,
                 interval STRING,
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     spark.sql("""
         CREATE TABLE IF NOT EXISTS silver.technical (
         id INT,
-        event_id INT,
+        realtime_id INT,
         endtime TIMESTAMP,
         symbol STRING,
         sma20 DOUBLE,
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         atr DOUBLE,
         va_high DOUBLE,
         va_low DOUBLE,
-        POC DOUBLE,
+        poc DOUBLE,
         year INT,
         month INT,
         day INT,
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     spark.sql("""
         CREATE TABLE IF NOT EXISTS silver.sentiment (
         id INT,
-        event_id INT,
+        realtime_id INT,
         endtime TIMESTAMP,
         RSI_sen STRING,
         MACD_sen STRING,
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     # Create table for ML table
 
     # ------------------CREATE GOLD LAYER----------------------
-    spark.sql("""CREATE TABLE IF NOT EXISTS gold.dim_coin_sentiment_statistic
+    spark.sql("""CREATE TABLE IF NOT EXISTS gold.coin_sentiment_statistic
             (
                 id INT,
                 coin_id STRING,
@@ -193,12 +193,12 @@ if __name__ == "__main__":
                 atr_sen STRING,
                 va_high FLOAT,
                 va_low FLOAT,
-                POC FLOAT,
+                poc FLOAT,
                 sentiment_signal STRING,
                 year INT,
                 month INT,
                 day INT,
-                hour INT,
+                hour INT
             )
             USING ICEBERG
             PARTITIONED BY (coin_id)

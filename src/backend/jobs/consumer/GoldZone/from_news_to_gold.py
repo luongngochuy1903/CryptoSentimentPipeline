@@ -4,7 +4,7 @@ from pyspark.sql.window import Window
 from datetime import datetime
 from load_to_gold_module import get_latest
 now = datetime.now()
-spark = SparkSession.builder.appName("Loading to Gold zone").getOrCreate()
+spark = SparkSession.builder.appName("Loading to Gold zone").config("spark.sql.shuffle.partitions", "12").getOrCreate()
 
 # Loading News Silver to Gold
 fetch_max_id = spark.sql("SELECT MAX(id) as max_id from iceberg.gold.dim_news").collect()

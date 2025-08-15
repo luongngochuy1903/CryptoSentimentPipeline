@@ -10,16 +10,24 @@ class RealtimeQualityProducer(SchemaRegistryObj):
         from pyspark.sql import SparkSession
         spark = SparkSession.builder \
             .appName("Data quality check") \
+            .appName("Read from MinIO via s3a") \
+            .config("spark.cores.max", "1") \
+            .config("spark.executor.cores", "1") \
+            .config("spark.executor.memory", "1G") \
             .getOrCreate()
         latest = get_latest_partition_datetime("raw", "realtimecoin")
         coindf = spark.read.json(f"s3a://raw/realtimecoin/{latest.year}/{latest.month:02}/{latest.day:02}/{latest.hour:02}")
         self.logger.info(coindf.schema.simpleString())
         coindf.printSchema()
-        
+
+        #changing name
+        coindf = coindf.withColumnRenamed("event_id", "realtime_id")
+
         #Cheking date
         from pyspark.sql.functions import col, to_timestamp, cast
-        coindf = coindf.withColumn("starttime", to_timestamp(col("starttime"), "yyyy-MM-dd HH:mm:ss"))
-        coindf = coindf.withColumn("endtime", to_timestamp(col("endtime"), "yyyy-MM-dd HH:mm:ss"))
+        # coindf = coindf.withColumn("starttime", to_timestamp(col("starttime"), "yyyy-MM-dd'T'HH:mm:ss.SSSX"))
+        # coindf = coindf.withColumn("endtime", to_timestamp(col("endtime"), "yyyy-MM-dd'T'HH:mm:ss.SSSX"))
+        print(coindf.head(3))
 
         #Checking volume, price
         coindf = coindf.withColumn("volume", col("volume").cast('double'))
@@ -46,8 +54,8 @@ def main():
                 "symbol": {"type":"string"},
                 "name": {"type":"string"},
                 "interval": {"type":"string"},
-                "starttime": {"type":"string", "format":"date-time"},
-                "endtime": {"type":"string", "format":"date-time"},
+                "starttime": {"type":"string"},
+                "endtime": {"type":"string"},
                 "volume": {"type":"number"},
                 "quotevolume": {"type":"number"},
                 "open": {"type":"number"},

@@ -12,6 +12,7 @@ class NewsQualityProducer(SchemaRegistryObj):
             .appName("Read from MinIO via s3a") \
             .config("spark.cores.max", "1") \
             .config("spark.executor.cores", "1") \
+            .config("spark.executor.memory", "1G") \
             .getOrCreate()
         latest = get_latest_partition_datetime("raw", "news")
         print(latest)

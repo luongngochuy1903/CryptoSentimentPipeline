@@ -26,7 +26,7 @@ class NewsConsumer(ConsumerManager):
             password=POSTGRES_PASSWORD,
             dbname="backend"
         )
-        self.cursor = self.postgres_connect.cursor()
+        self.cursor = None
         self.minio_client = Minio(
             endpoint='minio:9000',
             access_key=MINIO_ACCESS_KEY,
@@ -36,8 +36,6 @@ class NewsConsumer(ConsumerManager):
 
     def handle_msg(self):
         bucket_name = "raw"
-        if not self.minio_client.bucket_exists(bucket_name):
-            self.minio_client.make_bucket(bucket_name)
         data = self.batch
         now = datetime.utcnow()
         date_partition = datetime.utcnow().strftime("%Y/%m/%d")
@@ -69,17 +67,17 @@ class NewsConsumer(ConsumerManager):
                 url = row.get("url")
                 published = parse(row.get("published"))
                 author = row.get("author")
-                source = row.get("source")
                 tag = row.get("tag")
-                db_data.append((domain, title, url, published, author, source, tag))
+                db_data.append((domain, title, url, published, author, tag))
         except Exception as e:
             print(f"Fail: {e}")
         if db_data:
             try:
+                self.cursor = self.postgres_connect.cursor()
                 execute_values(
                     self.cursor,
                     """
-                    INSERT INTO backend.news(domain, title, url, published, author, source, tag)
+                    INSERT INTO backend.news(domain, title, url, published, author, tag)
                     VALUES %s
                     """,
                     db_data
@@ -93,5 +91,5 @@ class NewsConsumer(ConsumerManager):
 def main():
     manager = NewsConsumer()
     manager.subcribe_topic(manager.coin_realtime_consumer,"news")
-    manager.polling("News-consumer", manager.coin_realtime_consumer)
+    manager.polling_batch("News-consumer", manager.coin_realtime_consumer)
 main()

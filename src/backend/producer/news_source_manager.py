@@ -55,13 +55,13 @@ class Batch_News_Manager():
             logger.info(f"Delivered to {msg.topic()} [{msg.partition()}] offset {msg.offset()}")
 
     def check_quality(self, results):
-        logger.info(f"Tổng số bài: {len(results)}")
+        logger.info(f"Sum: {len(results)}")
         dates = [parse(item['published']) for item in results if item['published']]
-        logger.info(f"Ngày cũ nhất: {min(dates).isoformat()}")
-        logger.info(f"Ngày mới nhất: {max(dates).isoformat()}")
+        logger.info(f"Oldest day: {min(dates).isoformat()}")
+        logger.info(f"Nearest day: {max(dates).isoformat()}")
 
         null_text_count = sum(1 for item in results if item["text"] is None)
-        print(f"Số bài viết không lấy được nội dung: {null_text_count}")
+        print(f"Text without body text: {null_text_count}")
 
 def main():
     """

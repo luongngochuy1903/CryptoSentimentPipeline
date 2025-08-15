@@ -10,6 +10,10 @@ class CommentsQualityProducer(SchemaRegistryObj):
         from pyspark.sql import SparkSession
         spark = SparkSession.builder \
             .appName("Read from MinIO via s3a") \
+            .appName("Read from MinIO via s3a") \
+            .config("spark.cores.max", "1") \
+            .config("spark.executor.cores", "1") \
+            .config("spark.executor.memory", "1G") \
             .getOrCreate()
         latest = get_latest_partition_datetime("raw", "news")
         commentsdf = spark.read.json(f"s3a://raw/comments/{latest.year}/{latest.month}/{latest.day}/{latest.hour}/")
