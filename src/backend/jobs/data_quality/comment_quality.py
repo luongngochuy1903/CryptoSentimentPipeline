@@ -86,16 +86,8 @@ class CommentsQualityProducer(SchemaRegistryObj):
         for column, dtype in commentsdf.dtypes:
             self.logger.info(f"DATATYPE Column {column}: {dtype}")
 
-        #Eliminate old published from nearest scraped timestamp to now
-        latest_update = get_latest_partition_datetime("silver", "comments")
-        today = datetime.today()
-        print(today)
-
-        if latest_update:
-            commentsdf = commentsdf.filter((col('created_utc') > latest_update) & (col('created_utc') <= today))
         sumcount = commentsdf.count()
         self.logger.info(f"SUM OF RECORD after filtering TIMESTAMP: {sumcount}")
-
         # Build model reflecting which content is related to domain topics.
 
         return commentsdf

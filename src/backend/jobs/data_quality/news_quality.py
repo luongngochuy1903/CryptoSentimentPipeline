@@ -70,17 +70,10 @@ class NewsQualityProducer(SchemaRegistryObj):
         for column, dtype in newsdf.dtypes:
             self.logger.info(f"DATATYPE Column {column}: {dtype}")
 
-        #Eliminate old published from nearest scraped timestamp to now
-        latest_update = get_latest_partition_datetime("silver", "news")
-
-        today = datetime.today()
-        print(today)
-        if latest_update:
-            newsdf = newsdf.filter((col('published_ts') > latest_update) & (col('published_ts') <= today))
         newsdf = newsdf.drop("published_ts")
         newsdf = newsdf.withColumnRenamed("authors", "author")
         sumcount = newsdf.count()
-        self.logger.info(f"SUM OF RECORD after filtering TIMESTAMP: {sumcount}")
+        self.logger.info(f"SUM OF RECORD after filtering: {sumcount}")
 
         # Build model reflecting which content is related to domain topics.
 

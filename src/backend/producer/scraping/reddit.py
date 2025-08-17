@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+from datetime import datetime, timezone, timedelta
 from dateutil.parser import parse
 
 def run_comment():
@@ -19,7 +20,7 @@ def run_comment():
 
     for topic in topics:
         url = f"https://www.reddit.com/r/{topic}/new.json?limit=20"
-        print(f"🔍 Scraping r/{topic}...")
+        print(f"Scraping r/{topic}...")
 
         try:
             res = requests.get(url, headers=headers, timeout=5)
@@ -42,12 +43,8 @@ def run_comment():
                 })
 
         except Exception as e:
-            print(f"❌ Lỗi khi scrape r/{topic}: {e}")
+            print(f"Fail to scrape r/{topic}: {e}")
 
         time.sleep(2)  
 
-    # with open("reddit_crypto_cmt.jsonl", "w", encoding="utf-8") as f:
-    #     for item in results:
-    #         json.dump(item, f, ensure_ascii=False)
-    #         f.write("\n")
     return results

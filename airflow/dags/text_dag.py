@@ -6,6 +6,7 @@ from datetime import datetime
 from airflow.models.baseoperator import chain
 import sys, os
 sys.path.append("/opt/airflow")
+from utils.constants import MINIO_ACCESS_KEY, MINIO_SECRET_KEY
 from modules.s3sensorhook  import S3NewFileSensor
 
 with DAG("News_with_Comments_ETL_pipelines",
@@ -20,13 +21,13 @@ with DAG("News_with_Comments_ETL_pipelines",
 
     news_consume_from_source = BashOperator(
         task_id="news_consume_from_source",
-        bash_command="docker exec kafka-python python scripts/consumer/jobs/news_consumer"
+        bash_command="docker exec kafka-python python scripts/consumer/jobs/news_consumer.py"
     )
 
     news_checking_minio_stage1 = S3NewFileSensor(
         task_id="Checking_raw_file_exists_news",
-        aws_access_key="",
-        aws_secret_key="",
+        aws_access_key=MINIO_ACCESS_KEY,
+        aws_secret_key=MINIO_SECRET_KEY,
         endpoint='http://minio:9000',
         bucket="raw",
         prefix="news",
@@ -42,8 +43,8 @@ with DAG("News_with_Comments_ETL_pipelines",
 
     news_checking_minio_stage2 = S3NewFileSensor(
         task_id="Checking_raw_file_exists_news_stage2",
-        aws_access_key="",
-        aws_secret_key="",
+        aws_access_key=MINIO_ACCESS_KEY,
+        aws_secret_key=MINIO_SECRET_KEY,
         endpoint='http://minio:9000',
         bucket="silver",
         prefix="news",
@@ -66,13 +67,13 @@ with DAG("News_with_Comments_ETL_pipelines",
 
     cmt_consume_from_source = BashOperator(
         task_id="cmt_consume_from_source",
-        bash_command="docker exec kafka-python python scripts/consumer/jobs/comment_consumer"
+        bash_command="docker exec kafka-python python scripts/consumer/jobs/comment_consumer.py"
     )
 
     cmt_checking_minio_stage1 = S3NewFileSensor(
         task_id="Checking_raw_file_exists_comments",
-        aws_access_key="",
-        aws_secret_key="",
+        aws_access_key=MINIO_ACCESS_KEY,
+        aws_secret_key=MINIO_SECRET_KEY,
         endpoint='http://minio:9000',
         bucket="raw",
         prefix="comments",
@@ -89,8 +90,8 @@ with DAG("News_with_Comments_ETL_pipelines",
 
     cmt_checking_minio_stage2 = S3NewFileSensor(
         task_id="Checking_raw_file_exists_comments_stage2",
-        aws_access_key="",
-        aws_secret_key="",
+        aws_access_key=MINIO_ACCESS_KEY,
+        aws_secret_key=MINIO_SECRET_KEY,
         endpoint='http://minio:9000',
         bucket="silver",
         prefix="comments",

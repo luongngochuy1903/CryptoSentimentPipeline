@@ -15,15 +15,15 @@ silverCommentsDf = spark.sql(f"""
 
 goldCommentsDf = silverCommentsDf.withColumn("created_utc", F.date_format("published", "yyyyMMdd"))
 
-goldTopicDf = spark.read.table("iceberg.gold.dim_topic")
+goldTopicDf = spark.read.table("gold.dim_topic")
 goldCommentsDf = goldCommentsDf.join(goldTopicDf, goldCommentsDf["tag"] == goldTopicDf["topic"], how="left").select(goldCommentsDf["*"], goldTopicDf["id_topic"])
 goldCommentsDf.drop("tag")
 
-goldCoinDf = spark.read.table("iceberg.gold.dim_coin")
+goldCoinDf = spark.read.table("gold.dim_coin")
 goldCommentsDf = goldCommentsDf.join(goldCoinDf, goldCommentsDf["subreddit"] == goldCoinDf["name"], how="left").select(goldCommentsDf["*"], goldCoinDf["coin_id"])
 goldCommentsDf.drop("subreddit")
 
-goldAuthorDf = spark.read.table("iceberg.gold.author_credit")
+goldAuthorDf = spark.read.table("gold.author_credit")
 new_author = goldCommentsDf.filter(F.col("author").isNotNull()).select("author", "score").distinct()
 exist_author = goldAuthorDf.select("author", "score").distinct()
 new_author = new_author.subtract(exist_author)
@@ -36,5 +36,5 @@ goldAuthorDf = goldAuthorDf.unionByName(new_author)
 
 goldCommentsDf = goldCommentsDf.join(goldAuthorDf, goldCommentsDf["author"] == goldAuthorDf["author"], how='left').select(goldCommentsDf["*"], goldAuthorDf["id_author"])
 
-new_author.writeTo("iceberg.gold.author_credit").append()
-goldCommentsDf.writeTo("iceberg.gold.dim_comments").append()
+new_author.writeTo("gold.author_credit").append()
+goldCommentsDf.writeTo("gold.dim_comments").append()

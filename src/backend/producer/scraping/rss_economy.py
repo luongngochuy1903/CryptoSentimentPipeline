@@ -1,20 +1,21 @@
 import feedparser
 import trafilatura, requests, threading
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dateutil.parser import parse
 from playwright.sync_api import sync_playwright
 
 def run_economy():
+    print("---------------------RSS ECONOMY----------------------")
     # RSS feeds
     rss_feeds = [
         # The Guardian
         "https://www.theguardian.com/uk/business/rss",
         # CNBC
         "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-        # Economist (phải lọc sau nếu cần)
+        # Economist
         "https://www.economist.com/latest/rss.xml",
         # ft
         "https://www.ft.com/rss/home",
@@ -36,19 +37,13 @@ def run_economy():
         #Money
         "https://money.com/money/feed/",
     ]
-    thread_local = threading.local()
-
-    def get_session():
-        if not hasattr(thread_local, "session"):
-            thread_local.session = requests.Session()
-        return thread_local.session
 
     # Parse RSS and get URL
     def get_article_urls():
         urls = []
         for feed_url in rss_feeds:
             feed = feedparser.parse(feed_url) #Translate to Python object
-            for entry in feed.entries:
+            for entry in feed.entries[:10]:
                 urls.append({
                     "title": entry.get("title"),
                     "link": entry.get("link"),
@@ -62,14 +57,14 @@ def run_economy():
     def extract_full_text(entry):
         url = entry['link']
         try:
-            downloaded = trafilatura.fetch_url(url, request_session=get_session())
+            downloaded = trafilatura.fetch_url(url)
             if not downloaded:
-                # Nếu trafilatura không hoạt động, dùng playwright để render
+                # Using playwright if trafilatura doesn't work
                 with sync_playwright() as p:
                     browser = p.chromium.launch(headless=True)
                     page = browser.new_page()
                     page.goto(url, timeout=10000)  # 10s timeout
-                    page.wait_for_timeout(3000)    # đợi JS chạy
+                    page.wait_for_timeout(3000)    # wait for JS running completely
                     html = page.content()
                     browser.close()
 
@@ -99,36 +94,20 @@ def run_economy():
                 "tag": "economy"
             }
 
-    # Using threading to accelerate parsing speed
+    # Threading
     def scrape_all_articles():
         urls = get_article_urls()
         results = []
 
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(extract_full_text, entry) for entry in urls]
+            print(f"Sum of news: {len(urls)}")
             for future in as_completed(futures):
                 results.append(future.result())
 
         return results
 
-    # Start scraping
     results = scrape_all_articles()
 
-    threshold_date = datetime(2025, 4, 1, tzinfo=timezone.utc)
-
-    filtered_results = []
-    for item in results:
-        if item.get("published"):
-            try:
-                published_date = parse(item["published"])
-                if published_date > threshold_date:
-                    filtered_results.append(item)
-            except Exception as e:
-                pass 
-
     print("OK!" if results else "API does not return any result")
-    return filtered_results
-    # with open("rss_finance_filtered_april2025.jsonl", "w", encoding="utf-8") as f:
-    #     for item in filtered_results:
-    #         json.dump(item, f, ensure_ascii=False)
-    #         f.write("\n")
+    return results

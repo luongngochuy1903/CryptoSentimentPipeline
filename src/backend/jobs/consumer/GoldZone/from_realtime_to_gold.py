@@ -17,11 +17,9 @@ silverRealtimeDf = spark.sql(f"""
 
 goldRealtimeDf = silverRealtimeDf.withColumn("starttime_id", F.date_format("starttime", "yyyyMMdd"))
 goldRealtimeDf = goldRealtimeDf.withColumn("endtime_id", F.date_format("endtime", "yyyyMMdd"))
-goldTopicDf = spark.read.table("iceberg.silver.dim_topic")
-goldRealtimeDf = goldRealtimeDf.join(goldTopicDf, goldRealtimeDf["tag"] == goldTopicDf["topic"], how="left").select(goldRealtimeDf["*"], goldTopicDf["id_topic"])
-goldCoinDf = spark.read.table("iceberg.silver.dim_coin")
+goldCoinDf = spark.read.table("gold.dim_coin")
 goldRealtimeDf = goldRealtimeDf.join(goldCoinDf, goldRealtimeDf["name"] == goldCoinDf["name"], how="left").select(goldRealtimeDf["*"], goldCoinDf["coin_id"])
 goldRealtimeDf= goldRealtimeDf.drop("symbol")
 goldRealtimeDf = goldRealtimeDf.drop("name")
 goldRealtimeDf = goldRealtimeDf.drop("tag")
-goldRealtimeDf.writeTo("iceberg.gold.dim_realtime").append()
+goldRealtimeDf.writeTo("gold.dim_realtime").append()

@@ -94,15 +94,15 @@ def main():
         "id": {"type": "integer"},
         "realtime_id": {"type": "integer"},
         "endtime": {"type": "string"},
-        "RSI_sen": {"type": "string"},
-        "MACD_sen": {"type": "string"},
-        "EMA_sen": {"type": "string"},
+        "rsi_sen": {"type": "string"},
+        "macd_sen": {"type": "string"},
+        "ema_sen": {"type": "string"},
         "bb_sen": {"type": "string"},
-        "SMA_sen": {"type": "string"},
-        "ATR_sen": {"type": "string"}
+        "sma_sen": {"type": "string"},
+        "atr_sen": {"type": "string"}
     },
     "required": [
-        "id", "realtime_id", "endtime", "RSI_sen", "MACD_sen", "EMA_sen", "bb_sen", "SMA_sen", "ATR_sen"]
+        "id", "realtime_id", "endtime", "rsi_sen", "macd_sen", "ema_sen", "bb_sen", "sma_sen", "atr_sen"]
     }
     """
 

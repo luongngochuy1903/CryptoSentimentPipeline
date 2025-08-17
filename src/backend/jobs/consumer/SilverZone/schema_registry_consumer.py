@@ -75,30 +75,39 @@ class SchemaRegistryConsumer():
             .withColumn("hour", hour("created_ts")) 
         
         df = df.drop("created_ts")
-        if "realtime" not in path and "statistic" not in path and "sentiment" not in path:
+        if "realtime" not in path and "technical" not in path and "sentiment" not in path:
             if "comments" in path:
                 df = df.withColumn("created_utc", to_timestamp(col("created_utc")))
             else:
                 df = df.withColumn("published", to_timestamp("published", "yyyy--MM--dd'T'HH:mm:ss'Z'"))
+            print(df.head(4))
             df.writeTo(f"silver.{path}").append()
         else:
             df = df.withColumn("endtime", to_timestamp(col("endtime"), "yyyy-MM-dd'T'HH:mm:ss.SSSX"))
             if "realtime" in path:
                 df = df.withColumn("starttime", to_timestamp(col("starttime"), "yyyy-MM-dd'T'HH:mm:ss.SSSX"))
             df.printSchema()
+            print(df.head(4))
             df.writeTo(f"silver.{path}").append()
 
     def polling(self, consumer_name, path):
         json_deserializer = JSONDeserializer(self.schema, from_dict=self.dict_to_dict)
         self.subcribe_topic()
-        checking = False
         try:
+            while not self.consumer.assignment():
+                print("partition has not been asigned")
+                self.consumer.poll(timeout=1.0)  
+                time.sleep(1)
+            print(f"Assigned partitions: {self.consumer.assignment()}")
+            
             while True:
                 try:
-                    messages = self.consumer.consume(timeout=1.5)
+                    messages = self.consumer.consume(num_messages=2000, timeout=1.5)
                     if not messages:
-                        continue
+                        self.logger.info("Consumed entire messages.")
+                        break
                     batch = []
+                    print(f"Length of messages: {len(messages)}")
                     for msg in messages:
                         if msg is None:
                             continue
@@ -112,14 +121,12 @@ class SchemaRegistryConsumer():
                         print(f"offset: {msg.offset()}")
                         batch.append(python_dict)
                     try:
+                        print(f"length of batch: {len(batch)}")
                         self.handle_msg(batch, path)
-                        checking = True
                         self.consumer.commit(asynchronous=True)
                     except Exception as e:
                         self.logger.info(f"handle_msg fail: {e}")
-                    
-                    if checking:
-                        break
+                
                 except Exception as e:
                     self.logger.info(f"Fail when consuming messages from {self.topic}: {e}")
                 
