@@ -179,6 +179,7 @@ if __name__ == "__main__":
                 coin_id STRING,
                 realtime_id INT,
                 timestamp_id STRING,
+                endtime TIMESTAMP,
                 rsi10 FLOAT,
                 rsi_sen STRING,
                 macd FLOAT,
@@ -274,7 +275,7 @@ if __name__ == "__main__":
             CREATE TABLE IF NOT EXISTS gold.dim_realtime (
                 realtime_id INT,
                 coin_id INT,
-                interval TIMESTAMP,
+                interval STRING,
                 starttime TIMESTAMP,
                 starttime_id STRING,
                 endtime STRING,

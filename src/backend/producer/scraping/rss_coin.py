@@ -2,7 +2,7 @@ import feedparser
 import requests
 import trafilatura
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -10,6 +10,7 @@ from dateutil.parser import parse
 from playwright.sync_api import sync_playwright
 
 def run_coin():
+    print("---------------------RSS COIN----------------------")
     rss_feeds = [
         "https://www.coindesk.com/arc/outboundfeeds/rss",            #coindesk
         "https://bitcoinist.com/category/ethereum/feed/",           #etherium
@@ -23,18 +24,12 @@ def run_coin():
         "https://www.livebitcoinnews.com/feed/",                     #LiveBitcoin
         "https://crypto-economy.com/feed/"                          #CryptoEconomy
     ]
-    thread_local = threading.local()
-
-    def get_session():
-        if not hasattr(thread_local, "session"):
-            thread_local.session = requests.Session()
-        return thread_local.session
 
     def get_article_urls():
         urls = []
         for feed_url in rss_feeds:
             feed = feedparser.parse(feed_url)
-            for entry in feed.entries:
+            for entry in feed.entries[:10]:
                 urls.append({
                     "title": entry.get("title"),
                     "link": entry.get("link"),
@@ -44,18 +39,18 @@ def run_coin():
                 })
         return urls
 
-    # Bước 2: Dùng trafilatura để lấy nội dung
+    # Bước 2: trafilatura scraping context
     def extract_full_text(entry):
         url = entry['link']
         try:
-            downloaded = trafilatura.fetch_url(url, request_session=get_session())
+            downloaded = trafilatura.fetch_url(url)
             if not downloaded:
-                # Nếu trafilatura không hoạt động, dùng playwright để render
+                # Using playwright if trafilatura doesn't work
                 with sync_playwright() as p:
                     browser = p.chromium.launch(headless=True)
                     page = browser.new_page()
                     page.goto(url, timeout=10000)  # 10s timeout
-                    page.wait_for_timeout(3000)    # đợi JS chạy
+                    page.wait_for_timeout(3000)    # wait for JS running completely
                     html = page.content()
                     browser.close()
 
@@ -85,37 +80,18 @@ def run_coin():
                 "tag": "coin_news"
             }
 
-    # Bước 3: Threading để tối ưu tốc độ
+    # Bước 3: Threading
     def scrape_all_articles():
         urls = get_article_urls()
         results = []
 
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(extract_full_text, entry) for entry in urls]
+            print(f"Sum of news: {len(urls)}")
             for future in as_completed(futures):
                 results.append(future.result())
 
         return results
 
-    # Bước 4: Scrape và lưu kết quả
     results = scrape_all_articles()
-
-    threshold_date = datetime(2025, 4, 1, tzinfo=timezone.utc)
-
-    filtered_results = []
-    for item in results:
-        if item.get("published"):
-            try:
-                published_date = parse(item["published"])
-                if published_date > threshold_date:
-                    filtered_results.append(item)
-            except Exception as e:
-                pass 
-
-    print("OK!" if results else "API does not return any result")
-    return filtered_results
-    # Ghi ra file
-    # with open("rss_coin_filtered_april2025.jsonl", "w", encoding="utf-8") as f:
-    #     for item in filtered_results:
-    #         json.dump(item, f, ensure_ascii=False)
-    #         f.write("\n")
+    return results

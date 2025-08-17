@@ -8,26 +8,31 @@ from datetime import timezone, timedelta
 from query import  query_get_coin_data, query_load_back_to_db, query_get_24h_min_max, query_get_raw_statistic, query_load_back_to_db_sen
 from modules import fetch_min_max, fetch_coin_price, draw_chart, calculate_technical, label_detach
 
-# Thiết lập page
 st.set_page_config(page_title="CRYPTO AI SENTIMENT SUPPORT", layout="wide")
 st.title("Coin Market")
 
+symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"]
 # Refresh mỗi 3 giây
 st_autorefresh(interval=3000, key="data_refresh")
+
+all_prices = {sym: fetch_coin_price(sym, query_get_coin_data) for sym in symbols}
+all_technical = {sym: calculate_technical(sym, query_get_raw_statistic, query_load_back_to_db) for sym in symbols}
+all_min_max = {sym: fetch_min_max(sym, query_get_24h_min_max) for sym in symbols}
+all_sentiment = {sym: label_detach(all_technical[sym], query_load_back_to_db_sen) for sym in symbols}
 
 # Chọn coin
 coin = st.selectbox(
     "Coin >", 
-    options=["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"], 
+    options=symbols, 
     index=0
 )
 
 # Lấy dữ liệu
-df_realtime_price_24h = fetch_coin_price(coin, query_get_coin_data)
-df_technical = calculate_technical(coin, query_get_raw_statistic, query_load_back_to_db)
-print(f"hehe: {df_realtime_price_24h['endtime'].iloc[0]}")
-df_min_max = fetch_min_max(coin, query_get_24h_min_max)
-df_sentiment = label_detach(df_technical, query_load_back_to_db_sen)
+df_realtime_price_24h = all_prices[coin]
+print(f"checking date: {df_realtime_price_24h['endtime'].iloc[0]}")
+df_technical = all_technical[coin]
+df_min_max = all_min_max[coin]
+df_sentiment = all_sentiment[coin]
 
 # Hiển thị biểu đồ
 if not df_realtime_price_24h.empty:

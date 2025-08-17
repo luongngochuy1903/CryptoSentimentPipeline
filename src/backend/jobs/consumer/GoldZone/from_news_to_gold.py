@@ -25,4 +25,4 @@ goldNewsDf = goldNewsDf.withColumn("timestamp_id", F.date_format("published", "y
 goldTopicDf = spark.read.table("gold.dim_topic")
 goldNewsDf = goldNewsDf.join(goldTopicDf, goldNewsDf["tag"] == goldTopicDf["topic"], how="left").select(goldNewsDf["*"], goldTopicDf["id_topic"])
 goldNewsDf = goldNewsDf.drop("tag")
-goldNewsDf.writeTo("iceberg.gold.dim_news").append()
+goldNewsDf.writeTo("gold.dim_news").append()

@@ -10,7 +10,7 @@ query_get_coin_data="""
                 SELECT close
                     FROM event 
                     WHERE symbol = %s
-                    AND endtime = (SELECT endtime FROM latest_events LIMIT 1) - interval '24 hours'
+                    AND endtime = (SELECT endtime FROM latest_events ORDER BY endtime DESC LIMIT 1) - interval '24 hours'
             )
         SELECT e.close, e.endtime, ROUND((e.close - p.close), 2) AS price_diff,
                 ROUND(((e.close - p.close) / p.close) * 100, 2) AS percent_change
@@ -30,45 +30,47 @@ query_load_back_to_db = """
 """
 #----------------------------------------------
 query_get_24h_min_max = """
-        WITH new_event AS (
-    SELECT *
+                WITH new_event AS (
+        SELECT *
         FROM event
-        WHERE symbol = %s 
-        ORDER BY endtime
+        WHERE symbol = %s
+        ORDER BY endtime DESC
         LIMIT 1
         ),
-        upsert_max AS (
-        INSERT INTO event_max_cache (symbol, max_value, check_count_max)
-                SELECT symbol, close, 1
-                        FROM new_event ne
-                        WHERE NOT EXISTS (
-                                SELECT 1 FROM event_max_cache ec2 WHERE ec2.symbol = ne.symbol
-                )
-                RETURNING event_max_cache.symbol, event_max_cache.max_value
+        upsert AS (
+        INSERT INTO event_max_cache(symbol, max_value, max_timestamp)
+        SELECT ne.symbol, ne.close, ne.endtime
+        FROM new_event ne
+        WHERE NOT EXISTS (
+                SELECT 1 FROM event_max_cache ec WHERE ec.symbol = ne.symbol
+        )
+        RETURNING symbol, max_value, max_timestamp
         ),
-
-        update_max AS (
+        update_cache AS (
         UPDATE event_max_cache ec
         SET max_value = CASE
-                WHEN ne.close > ec.max_value THEN ne.close
-                WHEN ec.check_count_max >=86400 THEN ne.close
+                WHEN EXTRACT(EPOCH FROM (ne.endtime - ec.max_timestamp)) >= 86400
+                THEN ne.close
+                WHEN ne.close > ec.max_value
+                THEN ne.close
                 ELSE ec.max_value
         END,
-            check_count_max = CASE
-                WHEN ne.close > ec.max_value THEN 1
-                WHEN ec.check_count_max >=86400 THEN 1
-                ELSE ec.check_count_max + 1
+        max_timestamp = CASE
+                WHEN EXTRACT(EPOCH FROM (ne.endtime - ec.max_timestamp)) >= 86400
+                THEN ne.endtime
+                WHEN ne.close > ec.max_value
+                THEN ne.endtime
+                ELSE ec.max_timestamp
         END
-                FROM new_event ne
-                        WHERE ne.symbol = ec.symbol AND NOT EXISTS (
-                        SELECT 1 from upsert_max um WHERE um.symbol = ec.symbol 
-                        )
-                RETURNING ec.symbol, ec.max_value
+        FROM new_event ne
+        WHERE ec.symbol = ne.symbol
+        AND NOT EXISTS (SELECT 1 FROM upsert u WHERE u.symbol = ec.symbol)
+        RETURNING ec.symbol, ec.max_value, ec.max_timestamp
         )
+        SELECT * FROM upsert
+        UNION ALL
+        SELECT * FROM update_cache;
 
-        SELECT * FROM upsert_max 
-        UNION ALL 
-        SELECT * FROM update_max
     """
 
 #----------------------------------------------

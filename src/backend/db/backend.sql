@@ -64,5 +64,5 @@ CREATE TABLE "sentiment" (
 CREATE TABLE "event_max_cache" (
     "symbol" VARCHAR(10) PRIMARY KEY,
     "max_value" NUMERIC NOT NULL,
-    "check_count_max" INT NOT NULL
+    "max_timestamp" TIMESTAMPTZ NOT NULL
 );

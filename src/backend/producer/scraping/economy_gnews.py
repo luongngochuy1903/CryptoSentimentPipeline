@@ -1,6 +1,7 @@
 import requests
 import json
 import trafilatura, requests, threading
+from datetime import datetime, timezone, timedelta
 import os, sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 BASE_URL = os.path.dirname(__file__)
@@ -10,6 +11,7 @@ from dateutil.parser import parse
 from utils.constants import KEY_GNEWS
 
 def run_economy_gnews():
+    print("---------------------ECONOMY GNEWS----------------------")
     QUERY = "economy OR inflation OR finance"
     response = requests.get(f"https://gnews.io/api/v4/search?q={QUERY}&lang=en&apikey={KEY_GNEWS}")
     data = response.json()
@@ -63,9 +65,9 @@ def run_economy_gnews():
     results = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(scrape_article, article) for article in articles]
-        print(f"Tổng số bài: {len(articles)}")
+        print(f"Sum of news: {len(articles)}")
         for future in as_completed(futures):
             results.append(future.result())
-
-    print("OK!" if results else "API does not return any result")
+            
     return results
+

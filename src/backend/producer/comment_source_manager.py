@@ -1,4 +1,5 @@
 from scraping.reddit import run_comment
+from scraping.module_quality import filter_and_check_quality
 from confluent_kafka import Producer
 from dateutil.parser import parse
 import json, logging, os, sys
@@ -30,7 +31,7 @@ class Batch_Comment_Manager():
         for type, data in data_sources.items():
             logger.info("---------------CHECKING QUALITY-----------------")
             logger.info(f"Data checking for source: {type}")
-            self.check_quality(data)
+            data = self.check_quality(data, logger)
             logger.info("---------------WRITING TO KAFKA-----------------")
             for record in data:
                 self.producer.produce(
@@ -46,17 +47,8 @@ class Batch_Comment_Manager():
         else:
             logger.info(f"Delivered to {msg.topic()} [{msg.partition()}] offset {msg.offset()}")
 
-    def check_quality(self, results):
-        logger.info(f"Tổng số bài: {len(results)}")
-        dates = [
-            datetime.fromtimestamp(item['created_utc'], tz=timezone.utc)
-            for item in results if item['created_utc']
-        ]
-        logger.info(f"Ngày cũ nhất: {min(dates).isoformat()}")
-        logger.info(f"Ngày mới nhất: {max(dates).isoformat()}")
-
-        null_text_count = sum(1 for item in results if item["selftext"] is None)
-        print(f"Số bài viết không lấy được nội dung: {null_text_count}")
+    def check_quality(self, results, logger, column="created_utc"):
+        return filter_and_check_quality(results, logger, column)
 
 def main():
     """

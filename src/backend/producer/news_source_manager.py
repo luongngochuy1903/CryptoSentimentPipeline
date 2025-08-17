@@ -4,6 +4,7 @@ from dateutil.parser import parse
 from scraping.rss_coin import run_coin
 from scraping.coin_gnews import run_coin_gnews
 from scraping.economy_gnews import run_economy_gnews
+from scraping.module_quality import filter_and_check_quality
 from confluent_kafka import Producer
 import json, logging, os, sys
 from datetime import datetime
@@ -29,16 +30,16 @@ class Batch_News_Manager():
         logger.info("---------------SCRAPING DATA-----------------")
         logger.info("scraping...")
         data_sources = {
-            # "economy_news": run_economy(),
+            "economy_news": run_economy(),
             "economy_gnews": run_economy_gnews(),
-            # "politics_news": run_politics(),
-            # "crypto_news": run_coin(),
+            "politics_news": run_politics(),
+            "crypto_news": run_coin(),
             "crypto_gnews": run_coin_gnews(),
             }
         for type, data in data_sources.items():
             logger.info("---------------CHECKING QUALITY-----------------")
             logger.info(f"Data checking for source: {type}")
-            self.check_quality(data)
+            data = self.check_quality(data, logger)
             logger.info("---------------WRITING TO KAFKA-----------------")
             for record in data:
                 self.producer.produce(
@@ -54,14 +55,8 @@ class Batch_News_Manager():
         else:
             logger.info(f"Delivered to {msg.topic()} [{msg.partition()}] offset {msg.offset()}")
 
-    def check_quality(self, results):
-        logger.info(f"Sum: {len(results)}")
-        dates = [parse(item['published']) for item in results if item['published']]
-        logger.info(f"Oldest day: {min(dates).isoformat()}")
-        logger.info(f"Nearest day: {max(dates).isoformat()}")
-
-        null_text_count = sum(1 for item in results if item["text"] is None)
-        print(f"Text without body text: {null_text_count}")
+    def check_quality(self, results, logger, column="published"):
+        return filter_and_check_quality(results, logger, column)
 
 def main():
     """

@@ -88,8 +88,7 @@ class NewsConsumer(ConsumerManager):
                 self.postgres_connect.rollback()
         print("hoàn thành")
 
-def main():
+if __name__ == "__main__":
     manager = NewsConsumer()
     manager.subcribe_topic(manager.coin_realtime_consumer,"news")
     manager.polling_batch("News-consumer", manager.coin_realtime_consumer)
-main()

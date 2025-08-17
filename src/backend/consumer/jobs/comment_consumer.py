@@ -51,8 +51,7 @@ class NewsConsumer(ConsumerManager):
 
         print("hoàn thành")
 
-def main():
+if __name__ == "__main__":
     manager = NewsConsumer()
     manager.subcribe_topic(manager.coin_realtime_consumer,"comments")
     manager.polling_batch("Comments-consumer", manager.coin_realtime_consumer)
-main()
