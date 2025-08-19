@@ -4,3 +4,10 @@ streamlit
 altair 
 streamlit_autorefresh
 ta
+transformers>=4.42.0
+datasets>=2.19.0
+evaluate>=0.4.2
+scikit-learn>=1.4.2
+torch>=2.2.0; platform_system != "Windows"
+pyarrow>=16.0.0
+fastparquet>=2024.2.0

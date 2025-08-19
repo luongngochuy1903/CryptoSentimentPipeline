@@ -1,6 +1,9 @@
 import streamlit as st
 from psycopg2.pool import SimpleConnectionPool
 from psycopg2.extras import execute_values
+import os
+from pathlib import Path
+import numpy as np
 import altair as alt
 import pandas as pd
 import sys, os
@@ -300,3 +303,133 @@ def draw_chart(df, coin_symbol):
         height=500,
         title=f"📈 Giá {coin_symbol.upper()} theo thời gian"
     )
+
+def _softmax(x):
+    x = np.asarray(x, dtype=np.float64)
+    x = x - x.max(axis=-1, keepdims=True)
+    e = np.exp(x)
+    return e / e.sum(axis=-1, keepdims=True)
+
+def _load_local_hf_model(model_dir: str):
+    try:
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
+        tok = AutoTokenizer.from_pretrained(model_dir)
+        mdl = AutoModelForSequenceClassification.from_pretrained(model_dir)
+        return tok, mdl
+    except Exception:
+        return None, None
+
+def _predict_scores_local(texts: list[str], model_dir: str):
+    tok, mdl = _load_local_hf_model(model_dir)
+    if tok is None or not texts:
+        return None
+    try:
+        import torch
+        mdl.eval()
+        scores = []
+        with torch.no_grad():
+            for i in range(0, len(texts), 32):
+                batch = texts[i:i+32]
+                inp = tok(batch, padding=True, truncation=True, max_length=128, return_tensors="pt")
+                out = mdl(**inp)
+                prob = _softmax(out.logits.numpy())
+                # Map to [-100,100] as (p_pos - p_neg)*100, assuming id 2=POS, 0=NEG
+                s = (prob[:, 2] - prob[:, 0]) * 100.0
+                scores.extend(s.tolist())
+        return np.asarray(scores, dtype=float)
+    except Exception:
+        return None
+
+def _predict_scores_fallback(texts: list[str]):
+    if not texts:
+        return None
+    try:
+        from transformers import pipeline
+        clf = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
+        preds = clf(texts, truncation=True)
+        out = []
+        for p in preds:
+            label = str(p.get("label","")).lower()
+            conf = float(p.get("score", 0.5))
+            if "pos" in label or "2" in label:
+                out.append(+100.0 * conf)
+            elif "neg" in label or "0" in label:
+                out.append(-100.0 * conf)
+            else:
+                out.append(0.0)
+        return np.asarray(out, dtype=float)
+    except Exception:
+        return None
+
+def _momentum_from_price(price_df: pd.DataFrame) -> pd.DataFrame:
+    df = price_df.copy()
+    df["endtime"] = pd.to_datetime(df["endtime"], utc=True)
+    df = df.sort_values("endtime")
+    ret = df["close"].pct_change().fillna(0.0)
+    z = (ret.rolling(12, min_periods=6).mean() - ret.rolling(96, min_periods=24).mean())
+    std = ret.rolling(96, min_periods=24).std().replace(0, np.nan)
+    z = (z / std).replace([np.inf, -np.inf], np.nan).fillna(0.0).clip(-2, 2)
+    return pd.DataFrame({
+        "endtime": df["endtime"],
+        "sentiment": z * 10.0,   # for chart [-20,20]
+        "score": z * 50.0        # for gauge [-100,100]
+    })
+
+def get_sentiment_series(symbol: str, price_df: pd.DataFrame, text_df: pd.DataFrame | None) -> pd.DataFrame:
+    """
+    Returns ['endtime','sentiment','score'] aligned to price_df.
+    Uses local fine‑tuned model if available, else public model, else momentum fallback.
+    """
+    if text_df is None or text_df.empty:
+        return _momentum_from_price(price_df)
+
+    texts = text_df["text"].astype(str).tolist()
+    # try local model at models/sentiment_distilbert
+    model_dir = Path(__file__).resolve().parents[2] / "models" / "sentiment_distilbert"
+    scores = _predict_scores_local(texts, str(model_dir)) if model_dir.exists() else None
+    if scores is None:
+        scores = _predict_scores_fallback(texts)
+    if scores is None:
+        return _momentum_from_price(price_df)
+
+    df = text_df[["created_at"]].copy()
+    df["created_at"] = pd.to_datetime(df["created_at"], utc=True)
+    df["score"] = scores
+    # aggregate to price timeline
+    idx = pd.to_datetime(price_df["endtime"], utc=True)
+    agg = (df.set_index("created_at").resample("5min")["score"].mean()
+             .reindex(idx).interpolate(limit_direction="both").fillna(0.0).clip(-100, 100))
+    out = pd.DataFrame({"endtime": idx, "score": agg.values})
+    out["sentiment"] = (out["score"] / 5.0).clip(-20, 20)
+    return out
+
+def draw_price_sentiment_chart(price_df: pd.DataFrame, sent_df: pd.DataFrame, symbol: str):
+    df = price_df.copy()
+    df["endtime"] = pd.to_datetime(df["endtime"], utc=True)
+    df = df.sort_values("endtime")
+    s = sent_df.copy()
+    s["endtime"] = pd.to_datetime(s["endtime"], utc=True)
+    s = s.sort_values("endtime")
+
+    base = alt.Chart(df).encode(x=alt.X("endtime:T", axis=alt.Axis(title=None, format="%H:%M")))
+    price_line = base.mark_line(color="#22c55e", strokeWidth=2).encode(
+        y=alt.Y("close:Q", axis=alt.Axis(title="Price"), scale=alt.Scale(zero=False))
+    )
+    sent_line = alt.Chart(s).mark_line(color="#d1a31b", strokeWidth=2).encode(
+        x="endtime:T",
+        y=alt.Y("sentiment:Q", axis=alt.Axis(title="Sentiment"), scale=alt.Scale(domain=[-20, 20])),
+        tooltip=[alt.Tooltip("sentiment:Q", format=".2f", title="Sentiment")]
+    )
+    zero_rule = alt.Chart(pd.DataFrame({"y":[0]})).mark_rule(color="#94a3b8").encode(y="y")
+    return alt.layer(price_line, sent_line, zero_rule).resolve_scale(y="independent").properties(height=360)
+
+def compute_overall_sentiment(sent_df: pd.DataFrame) -> tuple[float, str]:
+    if sent_df is None or sent_df.empty:
+        return 0.0, "Neutral"
+    s = float(sent_df["score"].iloc[-1])
+    if s <= -60: lab = "Very Bearish"
+    elif s <= -20: lab = "Bearish"
+    elif s < 20: lab = "Neutral"
+    elif s < 60: lab = "Bullish"
+    else: lab = "Very Bullish"
+    return s, lab

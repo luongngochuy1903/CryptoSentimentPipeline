@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 import time
@@ -6,7 +8,14 @@ from streamlit_autorefresh import st_autorefresh
 from datetime import timezone, timedelta
 
 from query import  query_get_coin_data, query_load_back_to_db, query_get_24h_min_max, query_get_raw_statistic, query_load_back_to_db_sen
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from modules import fetch_min_max, fetch_coin_price, draw_chart, calculate_technical, label_detach
+from modules import draw_price_sentiment_chart, get_sentiment_series, compute_overall_sentiment
+from query import query_get_texts_for_coin_24h
 
 st.set_page_config(page_title="CRYPTO AI SENTIMENT SUPPORT", layout="wide")
 st.title("Coin Market")
@@ -34,9 +43,14 @@ df_technical = all_technical[coin]
 df_min_max = all_min_max[coin]
 df_sentiment = all_sentiment[coin]
 
+texts_24h = query_get_texts_for_coin_24h(coin)
+sent_series = get_sentiment_series(coin, df_realtime_price_24h, texts_24h)
+overall_score, overall_label = compute_overall_sentiment(sent_series)
+
 # Hiển thị biểu đồ
 if not df_realtime_price_24h.empty:
-    chart = draw_chart(df_realtime_price_24h, coin)
+    # show overlay chart
+    chart = draw_price_sentiment_chart(df_realtime_price_24h, sent_series, coin)
     price_diff = df_realtime_price_24h['price_diff'].iloc[0]
     price_diff_str = f"{price_diff:.2f}" if pd.notna(price_diff) else "null"
     if pd.isna(price_diff):
@@ -67,13 +81,13 @@ if not df_realtime_price_24h.empty:
     col_main1, col_main2, col_main3 = st.columns(3)
 
     with col_main1:
-        st.metric(label="Price", value=f"{df_realtime_price_24h['close'].iloc[0]:.2f}", delta="Neutral", delta_color="inverse", border=False)
+        st.metric(label="Price", value=f"{df_realtime_price_24h['close'].iloc[0]:.2f}", delta=overall_label, delta_color="inverse", border=False)
     with col_main2:
-        st.metric(label="▲", value=price_diff_str, delta="Neutral", delta_color="inverse", border=False)
+        st.metric(label="▲", value=price_diff_str, delta=f"{overall_score:.1f}", delta_color="inverse", border=False)
     with col_main3:
         percent_diff = df_realtime_price_24h['percent_change'].iloc[0]
         percent_diff_str = f"{percent_diff:.2f}" if pd.notna(percent_diff) else "null"
-        st.metric(label="%", value=percent_diff_str, delta="Neutral", delta_color="inverse", border=False)
+        st.metric(label="%", value=percent_diff_str, delta="Sentiment", delta_color="inverse", border=False)
         st.metric(label="Highest", value=f"{df_min_max['max_value'].iloc[0]}", delta="Neutral", delta_color="inverse", border=False)
 
     st.altair_chart(chart, use_container_width=True)
