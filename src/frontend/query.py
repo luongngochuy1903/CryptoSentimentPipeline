@@ -82,7 +82,6 @@ query_load_back_to_db_sen = """
         INSERT INTO sentiment(event_id, endtime, rsi_sen, macd_sen, ema_sen, bb_sen, sma_sen, atr_sen)
         VALUES %s
 """
-# ...existing code...
 from pathlib import Path
 import glob, re
 import pandas as pd
