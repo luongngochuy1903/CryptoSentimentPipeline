@@ -5,3 +5,11 @@ logs/
 __pycache__/
 *.ipynb_checkpoints
 models/
+
+# ML artifacts (optional but recommended)
+data/
+*.pt
+*.bin
+*.onnx
+*.ckpt
+*.h5
