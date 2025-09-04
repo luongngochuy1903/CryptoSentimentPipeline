@@ -31,13 +31,13 @@ comments_schema = """
         "author": {"type":"string"},
         "score": {"type":"number"},
         "url": {"type":"string"},
-        "created_utc": {"type":"string", "format":"date-time"},
+        "created_utc": {"type":"number"},
         "id": {"type":"string"},
-        "self_text": {"type":"string"},
+        "selftext": {"type":"string"},
         "num_comments": {"type":"integer"},
         "tag": {"type":"string"}
     },
-    "required": ["subreddit","title", "author", "score", "url", "created_utc", "id", "self_text", "num_comments", "tag"]
+    "required": ["subreddit","title", "author", "score", "url", "created_utc", "id", "selftext", "num_comments", "tag"]
 }
 """
 

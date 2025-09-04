@@ -15,8 +15,8 @@ class CommentsQualityProducer(SchemaRegistryObj):
             .config("spark.executor.cores", "1") \
             .config("spark.executor.memory", "1G") \
             .getOrCreate()
-        latest = get_latest_partition_datetime("raw", "news")
-        commentsdf = spark.read.json(f"s3a://raw/comments/{latest.year}/{latest.month}/{latest.day}/{latest.hour}/")
+        latest = get_latest_partition_datetime("raw", "comments")
+        commentsdf = spark.read.json(f"s3a://raw/comments/{latest.year}/{latest.month:02}/{latest.day:02}/{latest.hour:02}/")
         self.logger.info(commentsdf.schema.simpleString())
         commentsdf.printSchema()
 
@@ -31,7 +31,7 @@ class CommentsQualityProducer(SchemaRegistryObj):
         num_of_null_id = commentsdf.filter(col("id").isNull()).count()
         self.logger.info(f"ID columns WHICH IS NULL:{num_of_null_id}")
 
-        null_text = commentsdf.filter((col("text").isNotNull()) & (col("text") != ""))
+        null_text = commentsdf.filter((col("selftext").isNotNull()) & (col("selftext") != ""))
         num_of_null_text = null_text.count()
         self.logger.info(f"Selftext columns WHICH IS NULL:{commentsdf.count() - num_of_null_text}")
         commentsdf = null_text
@@ -67,20 +67,8 @@ class CommentsQualityProducer(SchemaRegistryObj):
 
         #Checking score, num_comments
         commentsdf = commentsdf.withColumn("score", col("score").cast("double"))
+        commentsdf = commentsdf.withColumn("created_utc", col("created_utc").cast("double"))
         commentsdf = commentsdf.withColumn("num_comments", col("num_comments").cast("int"))
-
-        #checking date
-        from pyspark.sql.functions import to_timestamp, to_date, min, max
-            
-        commentsdf = commentsdf.withColumn("created_utc", to_timestamp(col("created_utc")))
-        commentsdf.show(20)
-        min_date_row = commentsdf.agg(min(col("created_utc")).alias("min_date")).collect()[0]
-        min_date = min_date_row["min_date"]
-        self.logger.info(f"MIN DATE: {min_date}")
-
-        max_date_row = commentsdf.agg(max(col("created_utc")).alias("max_date")).collect()[0]
-        max_date = max_date_row["max_date"]
-        self.logger.info(f"MAX DATE: {max_date}")
 
         #Checking datatypes
         for column, dtype in commentsdf.dtypes:
@@ -104,13 +92,13 @@ def main():
                 "author": {"type":"string"},
                 "score": {"type":"number"},
                 "url": {"type":"string"},
-                "created_utc": {"type":"string", "format":"date-time"},
+                "created_utc": {"type":"number"},
                 "id": {"type":"string"},
-                "self_text": {"type":"string"},
+                "selftext": {"type":"string"},
                 "num_comments": {"type":"integer"},
                 "tag": {"type":"string"}
             },
-            "required": ["subreddit","title", "author", "score", "url", "created_utc", "id", "self_text", "num_comments", "tag"]
+            "required": ["subreddit","title", "author", "score", "url", "created_utc", "id", "selftext", "num_comments", "tag"]
         }
         """
 

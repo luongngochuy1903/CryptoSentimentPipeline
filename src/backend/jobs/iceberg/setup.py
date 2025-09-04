@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 url STRING,
                 created_utc TIMESTAMP,
                 id STRING,
-                self_text STRING,
+                selftext STRING,
                 num_comments INT,
                 tag STRING,
                 year INT,

@@ -7,5 +7,5 @@ spark = SparkSession.builder \
     .config("spark.executor.memory", "1G") \
     .getOrCreate()
 
-result_df = spark.sql("SELECT count(*) FROM silver.realtime")
+result_df = spark.sql("SELECT max(hour) FROM silver.news")
 result_df.show()

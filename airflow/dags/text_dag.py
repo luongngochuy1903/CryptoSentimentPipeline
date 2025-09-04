@@ -109,7 +109,7 @@ with DAG("News_with_Comments_ETL_pipelines",
     dag_finished = EmptyOperator(task_id="stop")
 
     text_upload_to_silverZone_stage_2 = BashOperator(
-        task_id="Pushing_to_silverZone_stage_2_comments",
+        task_id="Pushing_to_silverZone_stage_2_text",
         bash_command="docker exec cryptoreadproject-spark-master-1 spark-submit --master spark://spark-master:7077 /opt/spark_jobs/consumer/SilverZone/text_to_silver.py"
     )
 

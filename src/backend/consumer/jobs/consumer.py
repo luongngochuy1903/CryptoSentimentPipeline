@@ -72,10 +72,8 @@ class ConsumerManager():
     def polling_batch(self, consumer_name, consumer):
         print(f"Start consuming: {consumer_name}")
         try:
-            while not consumer.assignment():
-                print("partition has not been asigned")
-                consumer.poll(timeout=1.0)  
-                time.sleep(1)
+            consumer.poll(timeout=1.0)  
+            time.sleep(6)
             print(f"Assigned partitions: {consumer.assignment()}")
 
             while True:

@@ -13,7 +13,7 @@ silverCommentsDf = spark.sql(f"""
     """
     )
 
-goldCommentsDf = silverCommentsDf.withColumn("created_utc", F.date_format("published", "yyyyMMdd"))
+goldCommentsDf = silverCommentsDf.withColumn("created_utc", F.date_format("created_utc", "yyyyMMdd"))
 
 goldTopicDf = spark.read.table("gold.dim_topic")
 goldCommentsDf = goldCommentsDf.join(goldTopicDf, goldCommentsDf["tag"] == goldTopicDf["topic"], how="left").select(goldCommentsDf["*"], goldTopicDf["id_topic"])

@@ -26,7 +26,7 @@ def filter_and_check_quality(results, logger, column):
                 logger.warning(f"Error while parsing date for item: {e}")
                 continue
         else:
-            logger.info("There is null exists !")
+            logger.info(f"There is null exists! At {item['domain']} - {item['title']}")
 
     logger.info(f"Total results: {len(results)}")
     logger.info(f"Filtered (last 4h): {len(filtered_results)}")

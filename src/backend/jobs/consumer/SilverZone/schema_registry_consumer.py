@@ -77,9 +77,10 @@ class SchemaRegistryConsumer():
         df = df.drop("created_ts")
         if "realtime" not in path and "technical" not in path and "sentiment" not in path:
             if "comments" in path:
-                df = df.withColumn("created_utc", to_timestamp(col("created_utc")))
+                df = df.withColumn("created_utc", to_timestamp(from_unixtime(col("created_utc")), "yyyy-MM-dd'T'HH:mm:ss'Z'"))
             else:
-                df = df.withColumn("published", to_timestamp("published", "yyyy--MM--dd'T'HH:mm:ss'Z'"))
+                df = df.withColumn("published", to_timestamp("published", "yyyy-MM-dd'T'HH:mm:ss'Z'"))
+            df.printSchema()
             print(df.head(4))
             df.writeTo(f"silver.{path}").append()
         else:
@@ -94,10 +95,8 @@ class SchemaRegistryConsumer():
         json_deserializer = JSONDeserializer(self.schema, from_dict=self.dict_to_dict)
         self.subcribe_topic()
         try:
-            while not self.consumer.assignment():
-                print("partition has not been asigned")
-                self.consumer.poll(timeout=1.0)  
-                time.sleep(1)
+            self.consumer.poll(timeout=1.0)  
+            time.sleep(6)
             print(f"Assigned partitions: {self.consumer.assignment()}")
             
             while True:
